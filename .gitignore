@@ -1,3 +1,7 @@
+# idea
+.idea
+.vs
+
 # Logs
 logs
 *.log
@@ -102,3 +106,6 @@ dist
 
 # TernJS port file
 .tern-port
+
+#lock
+package-lock.json
