@@ -3,7 +3,6 @@
   "version": "0.0.0",
   "description": "A package that natively supports pulsar api",
   "main": "src/index.js",
-  "type": "module",
   "scripts": {
     "test": "npm test"
   },
@@ -15,7 +14,8 @@
     "eslint-plugin-node": "^11.0.0",
     "eslint-plugin-prettier": "^3.1.0",
     "eslint-plugin-promise": "^4.2.1",
-    "eslint-plugin-standard": "^4.0.0"
+    "eslint-plugin-standard": "^4.0.0",
+    "prettier": "^2.3.2"
   },
   "repository": {
     "type": "git",
@@ -34,5 +34,8 @@
   "bugs": {
     "url": "https://github.com/ayeo-flex/pulsar-flex/issues"
   },
-  "homepage": "https://github.com/ayeo-flex/pulsar-flex#readme"
+  "homepage": "https://github.com/ayeo-flex/pulsar-flex#readme",
+  "dependencies": {
+    "google-protobuf": "^3.17.3"
+  }
 }
