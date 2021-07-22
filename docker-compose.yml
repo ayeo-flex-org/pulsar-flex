@@ -22,8 +22,3 @@ services:
       - '3000:3000'
     environment:
       SERVICE_URL: 'http://pulsar:8080'
-
-networks:
-  default:
-    name: pulsar-network
-    driver: bridge
