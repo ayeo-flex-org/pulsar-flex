@@ -1,45 +1,39 @@
 const pulsarApi = require('../protocol/pulsar/pulsar_pb');
-const createSocket = require('./socket');
+const constants = require('../config/constants');
+const emitter = require('../network/emitter');
+const connection = require('../network/connection');
 
-const buildSimpleCommand = ({ command }) => {
-  const serializedBinary = command.serializeBinary();
+const client = ({ broker, timeout }) => {
+  return {
+    connect: async () => {
+      const [host, port] = broker.split(':');
+      const cnx = await connection({ host, port });
+      const baseCommand = new pulsarApi.BaseCommand().setType(pulsarApi.BaseCommand.Type.CONNECT);
 
-  const commandSizeBuffer = Buffer.alloc(4);
-  const totalSizeBuffer = Buffer.alloc(4);
+      const commandConnect = baseCommand.setConnect(
+        new pulsarApi.CommandConnect()
+          .setClientVersion(constants.CLIENT_VERSION)
+          .setAuthMethodName('none')
+          .setProtocolVersion(17)
+      );
 
-  commandSizeBuffer.writeInt32BE(serializedBinary.length);
-  totalSizeBuffer.writeInt32BE(serializedBinary.length + commandSizeBuffer.length);
+      cnx.sendSimpleCommandRequest({ command: commandConnect });
 
-  return Buffer.concat([totalSizeBuffer, commandSizeBuffer, serializedBinary]);
-};
+      return new Promise((resolve, reject) => {
+        setTimeout(
+          () => reject(new Error(`Timed out while connecting to broker: ${broker}`)),
+          timeout
+        );
 
-const client = {
-  connect: async ({ brokers }) => {
-    const baseCommand = new pulsarApi.BaseCommand();
-    baseCommand.setType(pulsarApi.BaseCommand.Type.CONNECT);
-
-    const commandConnect = baseCommand.setConnect(
-      new pulsarApi.CommandConnect()
-        .setClientVersion('Pulsar Clienttttttttt')
-        .setAuthMethodName('none')
-        .setProxyToBrokerUrl('http://localhost:8080')
-        .setProtocolVersion(17)
-    );
-
-    const socket = await createSocket({
-      host: '192.168.99.100',
-      port: '6650',
-      onData: (data) => console.log(data),
-      onEnd: () => console.log('fin'),
-      onTimeout: () => console.log('timed out buddy'),
-      onError: () => console.log('lol'),
-    });
-    const buffer = buildSimpleCommand({ command: commandConnect });
-
-    socket.write(buffer, 'binary');
-  },
-  disconnect: () => {},
-  sendProtoCommand: ({ command }) => {},
+        emitter.data.on('connected', () =>
+          resolve({
+            sendSimpleCommandRequest: cnx.sendSimpleCommandRequest,
+            responseEmitter: emitter.data,
+          })
+        );
+      });
+    },
+  };
 };
 
 module.exports = client;
