@@ -1,11 +1,8 @@
 const createSocket = require('./socket/socket');
 const resolver = require('./resolver');
-const emitter = require('./emitter');
 const serde = require('./serde');
 
 const connection = async ({ host, port }) => {
-  emitter.data.on('connected', () => console.log('lol'));
-
   const socket = await createSocket({
     host,
     port,

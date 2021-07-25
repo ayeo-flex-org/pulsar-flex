@@ -2,6 +2,7 @@ const pulsarApi = require('../protocol/pulsar/pulsar_pb');
 const constants = require('../config/constants');
 const emitter = require('../network/emitter');
 const connection = require('../network/connection');
+const services = require('./services');
 
 const client = ({ broker, timeout }) => {
   return {
@@ -25,12 +26,14 @@ const client = ({ broker, timeout }) => {
           timeout
         );
 
-        emitter.data.on('connected', () =>
+        emitter.data.on('connected', () => {
+          emitter.data.on('ping', () => services.ponger({ cnx }));
+
           resolve({
             sendSimpleCommandRequest: cnx.sendSimpleCommandRequest,
             responseEmitter: emitter.data,
-          })
-        );
+          });
+        });
       });
     },
   };
