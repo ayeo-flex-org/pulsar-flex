@@ -1,6 +1,6 @@
 const pulsarApi = require('../commands/protocol/pulsar/pulsar_pb');
 const constants = require('../config/constants');
-const emitter = require('./network/emitter');
+const emitter = require('./emitter');
 const connection = require('./network/connection');
 const services = require('./services');
 
@@ -30,9 +30,10 @@ const client = ({ broker, timeout, jwt }) => {
         emitter.data.on('connected', () => {
           emitter.data.on('ping', () => services.ponger({ cnx }));
         });
+
         resolve({
           sendSimpleCommandRequest: cnx.sendSimpleCommandRequest,
-
+          sendPayloadCommandRequest: cnx.sendPayloadCommandRequest,
           responseEmitter: emitter.data,
         });
       });

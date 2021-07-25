@@ -1,4 +1,4 @@
-const pulsarApi = require('../../../../commands/protocol/pulsar/pulsar_pb');
+const pulsarApi = require('../../../commands/protocol/pulsar/pulsar_pb');
 
 const deserializer = (buffer) => {
   // Currently un used, probably will find usage later on
