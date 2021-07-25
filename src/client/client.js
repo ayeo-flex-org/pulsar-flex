@@ -1,10 +1,10 @@
-const pulsarApi = require('../protocol/pulsar/pulsar_pb');
+const pulsarApi = require('../commands/protocol/pulsar/pulsar_pb');
 const constants = require('../config/constants');
-const emitter = require('../network/emitter');
-const connection = require('../network/connection');
+const emitter = require('./network/emitter');
+const connection = require('./network/connection');
 const services = require('./services');
 
-const client = ({ broker, timeout }) => {
+const client = ({ broker, timeout, jwt }) => {
   return {
     connect: async () => {
       const [host, port] = broker.split(':');
@@ -14,7 +14,8 @@ const client = ({ broker, timeout }) => {
       const commandConnect = baseCommand.setConnect(
         new pulsarApi.CommandConnect()
           .setClientVersion(constants.CLIENT_VERSION)
-          .setAuthMethodName('none')
+          .setAuthMethodName('token')
+          .setAuthData(Buffer.from(jwt))
           .setProtocolVersion(17)
       );
 
@@ -28,11 +29,11 @@ const client = ({ broker, timeout }) => {
 
         emitter.data.on('connected', () => {
           emitter.data.on('ping', () => services.ponger({ cnx }));
+        });
+        resolve({
+          sendSimpleCommandRequest: cnx.sendSimpleCommandRequest,
 
-          resolve({
-            sendSimpleCommandRequest: cnx.sendSimpleCommandRequest,
-            responseEmitter: emitter.data,
-          });
+          responseEmitter: emitter.data,
         });
       });
     },
