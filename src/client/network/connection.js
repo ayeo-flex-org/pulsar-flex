@@ -19,11 +19,11 @@ const connection = async ({ host, port }) => {
       socket.write(request, 'binary');
     },
 
-    sendPayloadCommandRequest: ({ command }) => {
-      const request = serde.payloadCommand.serializer({ command });
+    sendPayloadCommandRequest: ({ command, metadataCommand, payload }) => {
+      const request = serde.payloadCommand.serializer({ command, metadataCommand, payload });
 
       socket.write(request, 'binary');
-    }
+    },
   };
 };
 
