@@ -11,7 +11,7 @@ services:
       - 6650
     environment:
       authenticationEnabled: "true"
-      authenticationProvider: "org.apache.pulsar.broker.authentication.AuthenticationProviderToken"
+      authenticationProviders: "org.apache.pulsar.broker.authentication.AuthenticationProviderToken"
       authorizationEnabled: "true"
       brokerClientAuthenticationPlugin: "org.apache.pulsar.client.impl.auth.AuthenticationToken"
       brokerClientTlsEnabled: "false"
