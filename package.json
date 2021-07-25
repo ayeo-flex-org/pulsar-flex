@@ -40,7 +40,7 @@
   },
   "homepage": "https://github.com/ayeo-flex/pulsar-flex#readme",
   "dependencies": {
-    "buffer-crc32": "^0.2.13",
+    "crc-full": "^1.1.0",
     "google-protobuf": "^3.17.3"
   }
 }

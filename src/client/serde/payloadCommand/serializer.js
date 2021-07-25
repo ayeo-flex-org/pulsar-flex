@@ -1,6 +1,7 @@
-const crc32 = require('buffer-crc32');
+const CRC = require('crc-full');
 
 const buildPayloadCommand = ({ command, metadataCommand, payload }) => {
+  const crc = new CRC('CRC32_C', 32, 0x1edc6f41, 0xffffffff, 0xffffffff, true, true);
   const messageBinary = command.serializeBinary();
   const metadataBinary = metadataCommand.serializeBinary();
 
@@ -10,7 +11,9 @@ const buildPayloadCommand = ({ command, metadataCommand, payload }) => {
   const checkSumBuffer = Buffer.alloc(4);
   const metadataSizeBuffer = Buffer.alloc(4);
 
-  checkSumBuffer.writeInt32BE(crc32(metadataSizeBuffer, messageBinary, payload));
+  checkSumBuffer.writeInt32BE(
+    crc.computeBuffer(Buffer.concat([metadataSizeBuffer, messageBinary, payload]))
+  );
   commandSizeBuffer.writeInt32BE(messageBinary.length);
   metadataSizeBuffer.writeInt32BE(metadataBinary.length);
   magicNumberBuffer.writeInt16BE(3585); // 0x0e01
