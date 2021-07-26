@@ -1,50 +1,49 @@
-const pulsarApi = require('../protocol/pulsar/pulsar_pb');
+const commands = require('../commands');
 
 const producer = async ({ clientHandler, topic, producerConfiguration }) => {
   // fix the producer ID
   const { producerName = 'pulsar-flex' } = producerConfiguration;
-  const { sendSimpleCommandRequest, responseEmitter } = clientHandler;
-  const baseCommand = new pulsarApi.BaseCommand().setType(pulsarApi.BaseCommand.Type.PRODUCER);
-  const createProducer = baseCommand.setProducer(
-    new pulsarApi.CommandProducer()
-      .setTopic(topic)
-      .setProducerId(1)
-      .setRequestId(1)
-      .setProducerName(producerName)
-  );
+  const { sendSimpleCommandRequest, responseEmitter, sendPayloadCommandRequest } = clientHandler;
+  const requestId = 1;
+  const producerId = 1;
+  let sequenceId = 0;
+  const createProducer = commands.createProducer({ topic, requestId, producerName, producerId });
   sendSimpleCommandRequest({ command: createProducer });
 
   const send = () => {
-    // const baseCommand = new pulsarApi.BaseCommand().setType(pulsarApi.BaseCommand.Type.SEND);
-    // const sendMessage = baseCommand.send(
-    //   new pulsarApi.CommandSend().setMessage('bla').setProducerId(1).setSequenceId('1');
-    // )
-    // return new Promise((resolve, reject) => {
-    //   responseEmitter.on('success', (data) => {
-    //     console.log('success');
-    //     resolve(data);
-    //   });
-    //   responseEmitter.on('sendReceipt', (data) => {
-    //     console.log('sendReceipt');
-    //     resolve(data);
-    //   });
-    //   responseEmitter.on('error', () => {
-    //     resolve('failed to close producer');
-    //   });
-    // });
+    const sequenceId = 1;
+    const messageMetadata = commands.messageMetadata({ producerName, sequenceId });
+    const sendMessages = commands.sendMessages({ producerId, numMessages: 1, sequenceId: 0 });
+    const payload = Buffer.from('bla');
+    sendPayloadCommandRequest({
+      metadataCommand: messageMetadata,
+      command: sendMessages,
+      payload: payload,
+    });
+    return new Promise((resolve, reject) => {
+      responseEmitter.on('success', (data) => {
+        console.log(data);
+      });
+      responseEmitter.on('error', (data) => {
+        console.log(data);
+      });
+      responseEmitter.on('sendReceipt', (data) => {
+        console.log(data);
+      });
+      responseEmitter.on('sendError', (data) => {
+        console.log(data);
+      });
+    });
   };
 
   const close = () => {
-    const baseCommand = new pulsarApi.BaseCommand().setType(
-      pulsarApi.BaseCommand.Type.CLOSE_PRODUCER
-    );
-    const closeProducer = baseCommand.setCloseProducer(
-      new pulsarApi.CommandCloseProducer().setProducerId(1).setRequestId(2)
-    );
+    const producerId = 1;
+    const requestId = 2;
+    const closeProducer = commands.closeProducer({ producerId, requestId });
     sendSimpleCommandRequest({ command: closeProducer });
     return new Promise((resolve, reject) => {
       responseEmitter.on('success', (data) => {
-        resolve(data);
+        data.command.requestId === requestId && resolve(data);
       });
       responseEmitter.on('error', () => {
         resolve('failed to close producer');
@@ -55,6 +54,7 @@ const producer = async ({ clientHandler, topic, producerConfiguration }) => {
   return new Promise((resolve, reject) => {
     responseEmitter.on('producerSuccess', (data) => {
       console.log(data);
+      sequenceId = data.command.lastSequenceId + 1;
       resolve({ close, send });
     });
     responseEmitter.on('error', () => {

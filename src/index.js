@@ -10,6 +10,7 @@ const producer = require('./producer');
     topic: 'persistent://public/default/galrose',
     producerConfiguration: {},
   });
-  console.log('bla');
-  console.log(await producer1.close());
+  await producer1.send();
+  console.log('sent');
+  await producer1.close();
 })();
