@@ -1,6 +1,6 @@
 const createSocket = require('./socket/socket');
-const resolver = require('./resolver');
-const serde = require('./serde');
+const resolver = require('../resolver');
+const serde = require('../serde');
 
 const connection = async ({ host, port }) => {
   const socket = await createSocket({
@@ -15,6 +15,12 @@ const connection = async ({ host, port }) => {
   return {
     sendSimpleCommandRequest: ({ command }) => {
       const request = serde.simpleCommand.serializer({ command });
+
+      socket.write(request, 'binary');
+    },
+
+    sendPayloadCommandRequest: ({ command, metadataCommand, payload }) => {
+      const request = serde.payloadCommand.serializer({ command, metadataCommand, payload });
 
       socket.write(request, 'binary');
     },

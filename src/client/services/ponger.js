@@ -1,10 +1,12 @@
-const pulsarApi = require('../../commands/protocol/pulsar/pulsar_pb');
+const commands = require('../../commands');
+const emitter = require('../emitter');
 
 const ponger = ({ cnx }) => {
-  const basePongCommand = new pulsarApi.BaseCommand().setType(pulsarApi.BaseCommand.Type.PONG);
-  const commandPong = basePongCommand.setPong(new pulsarApi.CommandPong());
+  const commandPong = commands.pong({});
 
-  cnx.sendSimpleCommandRequest({ command: commandPong });
+  emitter.data.on('ping', () => {
+    cnx.sendSimpleCommandRequest({ command: commandPong });
+  });
 };
 
 module.exports = ponger;
