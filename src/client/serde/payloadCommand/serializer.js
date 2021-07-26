@@ -16,7 +16,7 @@ const buildPayloadCommand = ({ command, metadataCommand, payload }) => {
   );
   commandSizeBuffer.writeInt32BE(messageBinary.length);
   metadataSizeBuffer.writeInt32BE(metadataBinary.length);
-  magicNumberBuffer.writeInt16BE(3585); // 0x0e01
+  magicNumberBuffer.writeInt16BE(0x0e01);
   totalSizeBuffer.writeInt32BE(
     messageBinary.length +
       commandSizeBuffer.length +
