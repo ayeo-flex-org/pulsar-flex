@@ -1,10 +1,8 @@
 const client = require('./client');
+const producer = require('./producer');
 
-(async () => {
-  const configuredClient = client({
-    broker: 'localhost:6650',
-    timeout: 100,
-    jwt: 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiJ9.ZYtTkTL5jf6kbswRG6MNltdSMu1izrJIwVNsc4elGrA',
-  });
-  const { responseEmitter, sendSimpleCommandRequest } = configuredClient.connect();
-})();
+const pulsar = {
+  client,
+  producer,
+};
+module.exports = pulsar;
