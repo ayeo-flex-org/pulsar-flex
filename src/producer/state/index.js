@@ -1,5 +1,3 @@
-const utils = require('../../utils/emitter');
-
 const state = () => {
   let currentState = {
     producerId: 0,
