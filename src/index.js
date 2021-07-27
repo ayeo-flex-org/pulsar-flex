@@ -5,4 +5,5 @@ const pulsar = {
   client,
   producer,
 };
+
 module.exports = pulsar;

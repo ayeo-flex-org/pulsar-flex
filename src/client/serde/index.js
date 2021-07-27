@@ -1,9 +1,9 @@
 const simpleCommand = require('./simpleCommand');
 const payloadCommand = require('./payloadCommand');
-const batchPayloadCommand = require('./batchPayloadCommand');
+const payloadBatchCommand = require('./payloadBatchCommand');
 
 module.exports = {
   simpleCommand,
   payloadCommand,
-  batchPayloadCommand,
+  payloadBatchCommand,
 };

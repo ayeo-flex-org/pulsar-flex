@@ -1,3 +1,4 @@
+const common = require('../common');
 const { CRC } = require('crc-full');
 
 // bytes:   4          4                     2            4         4
@@ -7,22 +8,21 @@ const buildPayloadCommand = ({ command, metadataCommand, payload }) => {
   const messageBinary = command.serializeBinary();
   const metadataBinary = metadataCommand.serializeBinary();
 
-  const commandSizeBuffer = Buffer.alloc(4);
-  const totalSizeBuffer = Buffer.alloc(4);
-  const magicNumberBuffer = Buffer.alloc(2);
-  const checkSumBuffer = Buffer.alloc(4);
-  const metadataSizeBuffer = Buffer.alloc(4);
+  const commandSizeBuffer = Buffer.alloc(common.bytes.COMMAND_SIZE);
+  const totalSizeBuffer = Buffer.alloc(common.bytes.TOTAL_SIZE);
+  const magicNumberBuffer = Buffer.alloc(common.bytes.MAGIC_NUMBER);
+  const checkSumBuffer = Buffer.alloc(common.bytes.CRC);
+  const metadataSizeBuffer = Buffer.alloc(common.bytes.METADATA_SIZE);
 
   commandSizeBuffer.writeInt32BE(messageBinary.length);
   metadataSizeBuffer.writeInt32BE(metadataBinary.length);
   magicNumberBuffer.writeInt16BE(0x0e01);
 
+  const payloadBuffer = Buffer.from(payload);
+
   checkSumBuffer.writeInt32BE(
     crc.compute(Buffer.concat([metadataSizeBuffer, metadataBinary, payloadBuffer]))
   );
-
-  const payloadBuffer = Buffer.from(payload);
-
   totalSizeBuffer.writeInt32BE(
     messageBinary.length +
       commandSizeBuffer.length +

@@ -26,7 +26,7 @@ const client = ({ broker, timeout, jwt }) => {
           resolve({
             sendSimpleCommandRequest: cnx.sendSimpleCommandRequest,
             sendPayloadCommandRequest: cnx.sendPayloadCommandRequest,
-            sendBatchPayloadCommandRequest: cnx.sendPayloadCommandRequest,
+            sendBatchPayloadCommandRequest: cnx.sendPayloadBatchCommandRequest,
             responseEmitter: emitter.data,
           });
         });
