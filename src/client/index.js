@@ -4,7 +4,7 @@ const connection = require('./network/connection');
 const services = require('./services');
 const errors = require('../errors');
 
-class client {
+class Client {
   constructor({ broker, timeout, jwt }) {
     this._broker = broker;
     this._timeout = timeout;
@@ -43,4 +43,4 @@ class client {
   }
 }
 
-module.exports = client;
+module.exports = Client;
