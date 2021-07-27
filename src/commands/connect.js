@@ -6,9 +6,9 @@ const buildConnect = ({ protocolVersion, jwt }) => {
 
   return baseCommand.setConnect(
     new pulsarApi.CommandConnect()
-      .setClientVersion(constants.CLIENT_VERSION)
-      // .setAuthMethodName('token')
-      // .setAuthData(Buffer.from(jwt))
+      .setClientVersion(constants.general.CLIENT_VERSION)
+      .setAuthMethodName('token')
+      .setAuthData(Buffer.from(jwt))
       .setProtocolVersion(protocolVersion)
   );
 };

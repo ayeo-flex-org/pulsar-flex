@@ -24,6 +24,12 @@ const connection = async ({ host, port }) => {
 
       socket.write(request, 'binary');
     },
+
+    sendPayloadBatchCommandRequest: ({ command, metadataCommand, payload }) => {
+      const request = serde.payloadBatchCommand.serializer({ command, metadataCommand, payload });
+
+      socket.write(request, 'binary');
+    },
   };
 };
 
