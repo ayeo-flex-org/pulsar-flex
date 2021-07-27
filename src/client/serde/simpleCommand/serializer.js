@@ -1,3 +1,5 @@
+// bytes:   4          4
+// packet:  [totalSize][commandSize][command]
 const buildSimpleCommand = ({ command }) => {
   const serializedBinary = command.serializeBinary();
 
