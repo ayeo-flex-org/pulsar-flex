@@ -10,18 +10,8 @@ services:
       - 8080
       - 6650
     environment:
-      authenticationEnabled: "true"
-      authenticationProviders: "org.apache.pulsar.broker.authentication.AuthenticationProviderToken"
-      authorizationEnabled: "true"
-      brokerClientAuthenticationPlugin: "org.apache.pulsar.client.impl.auth.AuthenticationToken"
-      brokerClientTlsEnabled: "false"
-      brokerClientAuthenticationParameters: "file:///pulsar/conf/admin-jwt.txt"
-      tokenSecretKey: "file:///pulsar/conf/admin-token.txt"
-      superUserRoles: "admin"
       PULSAR_MEM: " -Xms128m -Xmx128m -XX:MaxDirectMemorySize=128m"
     command: |
       /bin/bash -c "
       bin/apply-config-from-env.py conf/standalone.conf &&
-      bin/pulsar tokens create-secret-key --output /pulsar/conf/admin-token.txt &&
-      bin/pulsar tokens create --secret-key file:///pulsar/conf/admin-token.txt --subject admin > /pulsar/conf/admin-jwt.txt &&
       bin/pulsar standalone"

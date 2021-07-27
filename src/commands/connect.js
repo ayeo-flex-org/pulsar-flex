@@ -3,14 +3,13 @@ const constants = require('../config/constants');
 
 const buildConnect = ({ protocolVersion, jwt }) => {
   const baseCommand = new pulsarApi.BaseCommand().setType(pulsarApi.BaseCommand.Type.CONNECT);
+  const commandConnect = new pulsarApi.CommandConnect()
+    .setClientVersion(constants.general.CLIENT_VERSION)
+    .setProtocolVersion(protocolVersion);
 
-  return baseCommand.setConnect(
-    new pulsarApi.CommandConnect()
-      .setClientVersion(constants.general.CLIENT_VERSION)
-      .setAuthMethodName('token')
-      .setAuthData(Buffer.from(jwt))
-      .setProtocolVersion(protocolVersion)
-  );
+  jwt && commandConnect.setAuthMethodName('token').setAuthData(Buffer.from(jwt));
+
+  return baseCommand.setConnect(commandConnect);
 };
 
 module.exports = buildConnect;
