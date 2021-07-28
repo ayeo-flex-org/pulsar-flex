@@ -21,7 +21,8 @@ const deserializer = (buffer) => {
     buffer.slice(metadataOffset, deserializedMetadataSize + metadataOffset)
   );
 
-  const payloadOffset = metadataSizeOffset + deserializedMetadataSize;
+  // Notice the +4 I added in the line under me.
+  const payloadOffset = metadataSizeOffset + deserializedMetadataSize + 4;
   const payload = buffer.slice(payloadOffset);
 
   const metadata = deserializedMessageMetadata.toObject();
@@ -43,7 +44,8 @@ const deserializePayload = ({ metadata, messageId, buffer }) => {
   for (let i = 0; i < metadata.numMessagesInBatch; i++) {
     const singleMetadataSize = buffer.readInt32BE(i);
     i += 4;
-    const singleMetadata = pulsarApi.SingleMessageMetadata.deserializeBinary(buffer);
+    const singleMetadataBuffer = buffer.slice(i);
+    const singleMetadata = pulsarApi.SingleMessageMetadata.deserializeBinary(buffer.slice(i));
     i += singleMetadataSize;
     const singleMessageId = {
       ledgerId: messageId.ledgerid,
