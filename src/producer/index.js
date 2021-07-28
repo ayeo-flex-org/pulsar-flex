@@ -27,6 +27,7 @@ class Producer {
       producerId: this._producerId,
       cnx: this._client.getCnx(),
       responseMediator: this._createCloseResponseMediator,
+      producerConfiguration: this._producerConfigiration,
     });
     const { producerName, lastSequenceId } = command;
     this._requestId++;
