@@ -28,12 +28,34 @@ const deserializer = (buffer) => {
   const baseCommandObject = deserializedBaseCommand.toObject();
   const typeNumber = deserializedBaseCommand.getType();
   const [type, command] = Object.entries(baseCommandObject)[typeNumber - 1];
+  const messages = deserializePayload({ metadata, messageId: command.messageId, buffer: payload });
+  console.log(messages);
   return {
     type,
     command,
     metadata,
     payload,
   };
+};
+
+const deserializePayload = ({ metadata, messageId, buffer }) => {
+  const messages = [];
+  for (let i = 0; i < metadata.numMessagesInBatch; i++) {
+    const singleMetadataSize = buffer.readInt32BE(i);
+    i += 4;
+    const singleMetadata = pulsarApi.SingleMessageMetadata.deserializeBinary(buffer);
+    i += singleMetadataSize;
+    const singleMessageId = {
+      ledgerId: messageId.ledgerid,
+      entryId: messageId.entryid,
+      partition: messageId.partition,
+      index: i,
+    };
+    const message = buffer.slice(i, singleMetadata.payloadSize);
+    messages.push(message);
+    i += singleMetadata.payloadSize;
+  }
+  return messages;
 };
 
 module.exports = deserializer;

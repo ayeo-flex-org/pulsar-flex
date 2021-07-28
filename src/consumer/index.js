@@ -1,4 +1,3 @@
-const pulsar = require('..');
 const commands = require('../commands');
 const responseMediators = require('../responseMediators');
 const SUB_TYPES = {
@@ -60,7 +59,6 @@ module.exports = class Consumer {
       messagePermits: msgFlow,
     });
     await this.client.getCnx().sendSimpleCommandRequest({ command: commandFlow }, this.noId);
-    console.log('bruh');
   }
 
   async unsubscribe() {}
@@ -70,7 +68,7 @@ module.exports = class Consumer {
   async run({ onMessage }) {
     const x = this.client.getResponseEvents();
     x.on('message', (data) => {
-      console.log(data.payload.toString());
+      console.log(data);
     });
   }
 };

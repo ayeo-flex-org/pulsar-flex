@@ -2,13 +2,13 @@ const { Pulsar, Consumer } = require('../src');
 
 (async () => {
   const pulsar = new Pulsar({
-    broker: '20.101.147.31:6650',
+    broker: 'localhost:6650',
     timeout: 1000,
   });
 
   const myConsumer = new Consumer({
     client: pulsar,
-    topic: 'persistent://public/default/galrose',
+    topic: 'persistent://public/default/consumeron',
     subscription: 'subbon',
     subType: Consumer.SUB_TYPES.EXCLUSIVE,
     consumerName: 'Jerry',
@@ -17,9 +17,8 @@ const { Pulsar, Consumer } = require('../src');
   await myConsumer.subscribe();
   myConsumer.run({
     onMessage: ({ ack, message, data }) => {
-      console.log(message);
       // ack(message.id);
     },
   });
-  await myConsumer.flow(5);
+  await myConsumer.flow(100);
 })();
