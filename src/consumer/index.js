@@ -1,5 +1,12 @@
 const commands = require('../commands');
 
+const SUB_TYPES = {
+  EXCLUSIVE: 0,
+  SHARED: 1,
+  FAILOVER: 2,
+  KEY_SHARED: 3,
+}
+
 module.exports = class Consumer {
   constructor({ client, topic, subscription, subType, consumerName, readCompacted }) {
     this.client = client;
@@ -13,13 +20,10 @@ module.exports = class Consumer {
     this.responser = null;
 
     this.isSubscribed = false;
+  }
 
-    this.SUB_TYPES = {
-      EXCLUSIVE: 0,
-      SHARED: 1,
-      FAILOVER: 2,
-      KEY_SHARED: 3,
-    };
+  static get SUB_TYPES() {
+    return SUB_TYPES;
   }
 
   async subscribe() {
