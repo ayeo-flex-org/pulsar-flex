@@ -5,7 +5,7 @@ const SUB_TYPES = {
   SHARED: 1,
   FAILOVER: 2,
   KEY_SHARED: 3,
-}
+};
 
 module.exports = class Consumer {
   constructor({ client, topic, subscription, subType, consumerName, readCompacted }) {
@@ -27,6 +27,8 @@ module.exports = class Consumer {
   }
 
   async subscribe() {
+    await this.client.connect();
+
     // naming validations
     const subscribeCommand = commands.subscribe({
       topic: this.topic,
@@ -37,9 +39,7 @@ module.exports = class Consumer {
       readCompacted: this.readCompacted,
       requestId: this.requestId,
     });
-
-    this.client = await this.client.connect();
-    await this.client.sendSimpleCommandRequest({ command: subscribeCommand });
+    await this.client.getCnx().sendSimpleCommandRequest({ command: subscribeCommand });
   }
 
   async flow(msgFlow) {
@@ -47,7 +47,7 @@ module.exports = class Consumer {
       consumerId: this.consumerId,
       messagePermits: msgFlow,
     });
-    this.client.sendSimpleCommandRequest({ command: commandFlow });
+    await this.client.getCnx().sendSimpleCommandRequest({ command: commandFlow });
   }
 
   async ack() {}
