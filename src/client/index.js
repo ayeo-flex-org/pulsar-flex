@@ -2,7 +2,7 @@ const emitter = require('./emitter');
 const commands = require('../commands');
 const connection = require('./network/connection');
 const services = require('./services');
-const common = require('../common');
+const common = require('../responseMediators/abstract');
 
 class Client {
   constructor({ broker, timeout, jwt }) {
@@ -23,7 +23,7 @@ class Client {
 
     this._cnx = await connection({ host, port });
 
-    await this._cnx.sendSimpleCommandRequest({ command: connectCommand }, this._responseMediator);
+    await this._cnx.sendSimpleCommandRequest({ command: connectCommand }, this);
 
     services.pinger({
       cnx: this._cnx,

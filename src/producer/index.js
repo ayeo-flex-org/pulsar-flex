@@ -1,23 +1,26 @@
 const services = require('./services');
+const responseMediators = require('../responseMediators');
 
 class Producer {
-  constructor({ client, topic, producerConfiguration }) {
-    this._client = client;
+  constructor({ pulsar, topic, producerConfiguration }) {
+    this._client = pulsar;
     this._topic = topic;
     this._producerConfigiration = producerConfiguration;
     this._requestId = 0;
     this._producerId = 0;
-    this._client = client;
     this._producerName = '';
+    this._createCloseResponseMediator = new responseMediators.RequestIdResponseMediator(pulsar);
+    this._sendResponseMediator = new responseMediators.SendResponseMediator(pulsar);
   }
 
   create = async () => {
-    this._client = await this._client.connect();
+    await this._client.connect();
     const { producerName, sequenceId } = await services.create({
       topic: this._topic,
       requestId: this._requestId,
       producerId: this._producerId,
-      client: this._client,
+      cnx: this._client.getCnx(),
+      responseMediator: this._createCloseResponseMediator,
     });
     this._requestId++;
     this._producerName = producerName;
@@ -28,20 +31,22 @@ class Producer {
   close = async () => {
     const closePromise = services.close({
       producerId: this._producerId,
-      client: this._client,
+      cnx: this._client.getCnx(),
       requestId: this._requestId,
+      responseMediator: this._createCloseResponseMediator,
     });
     this._requestId++;
     return closePromise;
   };
 
-  send = async ({ payload }) => {
+  send = async ({ payload, properties }) => {
     const sendPromise = services.send({
       producerId: this._producerId,
       producerName: this._producerName,
-      client: this._client,
+      cnx: this._client.getCnx(),
       sequenceId: this._sequenceId,
-    })({ payload });
+      responseMediator: this._sendResponseMediator,
+    })({ payload, properties });
     this._sequenceId++;
     return sendPromise;
   };
