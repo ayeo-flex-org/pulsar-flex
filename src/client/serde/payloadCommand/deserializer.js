@@ -16,9 +16,9 @@ const deserializer = (buffer) => {
     common.bytes.CRC + common.bytes.MAGIC_NUMBER + commandOffset + deserializedCommandSize;
 
   const deserializedMetadataSize = buffer.readInt32BE(metadataSizeOffset);
-
+  const metadataOffset = metadataSizeOffset + common.bytes.METADATA_SIZE;
   const deserializedMessageMetadata = pulsarApi.MessageMetadata.deserializeBinary(
-    buffer.slice(metadataSizeOffset, deserializedMetadataSize + metadataSizeOffset)
+    buffer.slice(metadataOffset, deserializedMetadataSize + metadataOffset)
   );
 
   const payloadOffset = metadataSizeOffset + deserializedMetadataSize;
@@ -28,7 +28,6 @@ const deserializer = (buffer) => {
   const baseCommandObject = deserializedBaseCommand.toObject();
   const typeNumber = deserializedBaseCommand.getType();
   const [type, command] = Object.entries(baseCommandObject)[typeNumber - 1];
-
   return {
     type,
     command,

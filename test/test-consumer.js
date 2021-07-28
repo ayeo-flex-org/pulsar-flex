@@ -15,4 +15,5 @@ const { Pulsar, Consumer } = require('../src');
     readCompacted: false,
   });
   await myConsumer.subscribe();
+  await myConsumer.flow(5);
 })();

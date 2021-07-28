@@ -24,6 +24,10 @@ module.exports = class Consumer {
       client,
       commands: ['success', 'error'],
     });
+    this.noId = new responseMediators.NoIdResponseMediator({
+      client,
+      commands: ['message'],
+    });
 
     this.isSubscribed = false;
   }
@@ -45,7 +49,10 @@ module.exports = class Consumer {
       readCompacted: this.readCompacted,
       requestId: this.requestId,
     });
-    await this.client.getCnx().sendSimpleCommandRequest({ command: subscribeCommand });
+    const a = await this.client
+      .getCnx()
+      .sendSimpleCommandRequest({ command: subscribeCommand }, this.subscribeResponseMediator);
+    console.log(a);
   }
 
   async flow(msgFlow) {
@@ -53,7 +60,8 @@ module.exports = class Consumer {
       consumerId: this.consumerId,
       messagePermits: msgFlow,
     });
-    await this.client.getCnx().sendSimpleCommandRequest({ command: commandFlow });
+    await this.client.getCnx().sendSimpleCommandRequest({ command: commandFlow }, this.noId);
+    console.log('bruh');
   }
 
   async ack() {}
