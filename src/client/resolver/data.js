@@ -18,7 +18,8 @@ const data = (buffer) => {
       latestChunk = buffer.slice(currentBufferIndex, buffer.length);
       return;
     }
-    const bufferSize = buffer.readInt32BE(currentBufferIndex) + 4;
+
+    const bufferSize = buffer.readUInt32BE(currentBufferIndex) + 4;
 
     if (bufferSize + currentBufferIndex > buffer.length) {
       latestChunk = buffer.slice(currentBufferIndex, buffer.length);
