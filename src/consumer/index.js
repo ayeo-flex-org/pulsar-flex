@@ -18,7 +18,6 @@ module.exports = class Consumer {
     this.readCompacted = readCompacted;
     this.consumerId = 0;
     this.requestId = 0;
-    this.responser = null;
 
     this.subscribeResponseMediator = new responseMediators.RequestIdResponseMediator({
       client,
@@ -64,7 +63,14 @@ module.exports = class Consumer {
     console.log('bruh');
   }
 
-  async ack() {}
-
   async unsubscribe() {}
+
+  async ack(message) {}
+
+  async run({ onMessage }) {
+    const x = this.client.getResponseEvents();
+    x.on('message', (data) => {
+      console.log(data.payload.toString());
+    });
+  }
 };

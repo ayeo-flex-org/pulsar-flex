@@ -5,7 +5,6 @@ const serde = require('../serde');
 const sendRequest = (request, nonSerializedData, socket, responseMediator) => {
   socket.write(request, 'binary');
 
-  // mutating
   return responseMediator.response({ data: nonSerializedData });
 };
 
