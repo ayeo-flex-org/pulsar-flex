@@ -1,6 +1,6 @@
 const commands = require('../../commands');
 
-const send = ({
+const sendMessage = ({
   producerName,
   sequenceId,
   producerId,
@@ -8,15 +8,15 @@ const send = ({
   responseMediator,
   payload,
   properties,
-  numMessages = 1,
 }) => {
   const { sendPayloadCommandRequest } = cnx;
   const messageMetadata = commands.messageMetadata({
     producerName,
     sequenceId,
+    properties,
   });
-  const sendMessages = commands.sendMessages({ producerId, numMessages, sequenceId });
-  return sendPayloadCommandRequest(
+  const sendMessages = commands.sendMessages({ producerId, sequenceId });
+  sendPayloadCommandRequest(
     {
       metadataCommand: messageMetadata,
       command: sendMessages,
@@ -26,4 +26,4 @@ const send = ({
   );
 };
 
-module.exports = send;
+module.exports = sendMessage;

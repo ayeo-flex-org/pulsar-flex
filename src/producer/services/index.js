@@ -1,10 +1,12 @@
-const send = require('./send');
+const sendMessage = require('./sendMessage');
+const sendBatch = require('./sendBatch');
 const close = require('./close');
 const create = require('./create');
 
 const services = {
   close,
-  send,
+  sendMessage,
+  sendBatch,
   create,
 };
 

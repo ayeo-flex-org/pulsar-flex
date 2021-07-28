@@ -27,6 +27,7 @@ class Producer {
       producerId: this._producerId,
       cnx: this._client.getCnx(),
       responseMediator: this._createCloseResponseMediator,
+      producerConfiguration: this._producerConfigiration,
     });
     const { producerName, lastSequenceId } = command;
     this._requestId++;
@@ -46,8 +47,8 @@ class Producer {
     return closePromise;
   };
 
-  send = async ({ payload, properties }) => {
-    const sendPromise = services.send({
+  sendMessage = async ({ payload, properties }) => {
+    const sendPromise = services.sendMessage({
       producerId: this._producerId,
       producerName: this._producerName,
       cnx: this._client.getCnx(),
@@ -55,6 +56,19 @@ class Producer {
       responseMediator: this._sendResponseMediator,
       payload,
       properties,
+    });
+    this._sequenceId++;
+    return sendPromise;
+  };
+
+  sendBatch = async ({ messages }) => {
+    const sendPromise = services.sendBatch({
+      producerId: this._producerId,
+      producerName: this._producerName,
+      cnx: this._client.getCnx(),
+      sequenceId: this._sequenceId,
+      responseMediator: this._sendResponseMediator,
+      messages,
     });
     this._sequenceId++;
     return sendPromise;

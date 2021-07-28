@@ -68,7 +68,7 @@ module.exports = class Consumer {
   async run({ onMessage }) {
     const x = this.client.getResponseEvents();
     x.on('message', (data) => {
-      console.log(data);
+      console.log(data.payload.toString());
     });
   }
 };
