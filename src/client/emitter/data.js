@@ -1,5 +1,5 @@
-const utils = require('../../utils');
+const { EventEmitter } = require('events');
 
-const data = new utils.Emitter();
+const data = new EventEmitter();
 
 module.exports = data;

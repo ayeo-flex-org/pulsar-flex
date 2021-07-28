@@ -2,6 +2,12 @@ const createSocket = require('./socket/socket');
 const resolver = require('../resolver');
 const serde = require('../serde');
 
+const sendRequest = (request, nonSerializedData, socket, responseMediator) => {
+  socket.write(request, 'binary');
+
+  return responseMediator.response({ data: nonSerializedData });
+};
+
 const connection = async ({ host, port }) => {
   const socket = await createSocket({
     host,
@@ -13,16 +19,31 @@ const connection = async ({ host, port }) => {
   });
 
   return {
-    sendSimpleCommandRequest: ({ command }) => {
-      const request = serde.simpleCommand.serializer({ command });
-
-      socket.write(request, 'binary');
+    sendSimpleCommandRequest: (dataToSerialize, responseMediator) => {
+      return sendRequest(
+        serde.simpleCommand.serializer(dataToSerialize),
+        dataToSerialize,
+        socket,
+        responseMediator
+      );
     },
 
-    sendPayloadCommandRequest: ({ command, metadataCommand, payload }) => {
-      const request = serde.payloadCommand.serializer({ command, metadataCommand, payload });
+    sendPayloadCommandRequest: (dataToSerialize, responseMediator) => {
+      return sendRequest(
+        serde.payloadCommand.serializer(dataToSerialize),
+        dataToSerialize,
+        socket,
+        responseMediator
+      );
+    },
 
-      socket.write(request, 'binary');
+    sendPayloadBatchCommandRequest: (dataToSerialize, responseMediator) => {
+      return sendRequest(
+        serde.payloadBatchCommand.serializer(dataToSerialize),
+        dataToSerialize,
+        socket,
+        responseMediator
+      );
     },
   };
 };

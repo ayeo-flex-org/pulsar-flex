@@ -4,9 +4,10 @@
   "description": "A package that natively supports pulsar api",
   "main": "src/index.js",
   "scripts": {
-    "test": "npm test",
+    "test": "node test/test-client.js",
     "start": "node src/index.js",
     "setup": "docker-compose up",
+    "setup-jwt": "docker-compose -f docker-compose-jwt.yml up",
     "get-jwt": "docker exec pulsar cat /pulsar/conf/admin-jwt.txt"
   },
   "devDependencies": {

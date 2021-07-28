@@ -10,11 +10,11 @@ const isSimpleCommand = (buffer) => {
 
 const data = (buffer) => {
   if (isSimpleCommand(buffer)) {
-    const { command, type } = serde.simpleCommand.deserializer(buffer);
+    const { type, command } = serde.simpleCommand.deserializer(buffer);
     emitter.data.emit(type, { command });
   } else {
-    const { command, type, payload, metadata } = serde.payloadCommand.deserializer(buffer);
-    emitter.data.emit(type, { command, payload, metadata });
+    const { type, command, payload, metadata } = serde.payloadCommand.deserializer(buffer);
+    emitter.data.emit(type, { command, metadata, payload });
   }
 };
 

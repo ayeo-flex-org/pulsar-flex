@@ -1,8 +1,9 @@
-const client = require('./client');
+const Pulsar = require('./client');
 const Producer = require('./producer');
 
 const pulsar = {
-  client,
+  Pulsar,
   Producer,
 };
+
 module.exports = pulsar;

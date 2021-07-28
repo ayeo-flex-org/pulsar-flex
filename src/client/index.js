@@ -2,36 +2,44 @@ const emitter = require('./emitter');
 const commands = require('../commands');
 const connection = require('./network/connection');
 const services = require('./services');
+const common = require('../common');
 
-const client = ({ broker, timeout, jwt }) => {
-  return {
-    connect: async () => {
-      const [host, port] = broker.split(':');
-      const cnx = await connection({ host, port });
+class Client {
+  constructor({ broker, timeout, jwt }) {
+    this._broker = broker;
+    this._timeout = timeout;
+    this._jwt = jwt;
+    this._cnx = null;
+    this._responseMediator = new common.ResponseMediator({
+      idFunc: () => 1,
+      commands: ['connected', 'ping', 'pong'],
+      responseEvents: emitter.data,
+    });
+  }
 
-      const connectCommand = commands.connect({ protocolVersion: 17, jwt });
+  async connect() {
+    const [host, port] = this._broker.split(':');
+    const connectCommand = commands.connect({ protocolVersion: 17, jwt: this._jwt });
 
-      cnx.sendSimpleCommandRequest({ command: connectCommand });
+    this._cnx = await connection({ host, port });
 
-      return new Promise((resolve, reject) => {
-        setTimeout(
-          () => reject(new Error(`Timed out while connecting to broker: ${broker}`)),
-          timeout
-        );
+    await this._cnx.sendSimpleCommandRequest({ command: connectCommand }, this._responseMediator);
 
-        emitter.data.on('connected', () => {
-          services.pinger({ cnx, pingingIntervalMs: 60000 });
-          services.ponger({ cnx });
+    services.pinger({
+      cnx: this._cnx,
+      pingingIntervalMs: 60000,
+      responseMediator: this._responseMediator,
+    });
+    services.ponger({ cnx: this._cnx, responseMediator: this._responseMediator });
+  }
 
-          resolve({
-            sendSimpleCommandRequest: cnx.sendSimpleCommandRequest,
-            sendPayloadCommandRequest: cnx.sendPayloadCommandRequest,
-            responseEmitter: emitter.data,
-          });
-        });
-      });
-    },
-  };
-};
+  getCnx() {
+    return this._cnx;
+  }
 
-module.exports = client;
+  getResponseEvents() {
+    return emitter.data;
+  }
+}
+
+module.exports = Client;
