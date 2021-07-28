@@ -5,6 +5,7 @@ const createProducer = require('./createProducer');
 const closeProducer = require('./closeProducer');
 const sendMessages = require('./sendMessages');
 const messageMetadata = require('./messageMetadata');
+const singleMessageMetadata = require('./singleMessageMetadata');
 
 module.exports = {
   connect,
@@ -14,4 +15,5 @@ module.exports = {
   closeProducer,
   sendMessages,
   messageMetadata,
+  singleMessageMetadata,
 };
