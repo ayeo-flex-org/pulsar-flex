@@ -1,9 +1,9 @@
 const commands = require('../../commands');
 
 const close =
-  ({ producerId, client, requestId, responseMediator }) =>
+  ({ producerId, cnx, requestId, responseMediator }) =>
   () => {
-    const { sendSimpleCommandRequest } = client;
+    const { sendSimpleCommandRequest } = cnx;
     const closeProducer = commands.closeProducer({ producerId, requestId });
     return sendSimpleCommandRequest({ command: closeProducer, responseMediator });
   };

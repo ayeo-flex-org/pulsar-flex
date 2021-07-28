@@ -1,9 +1,9 @@
 const abstract = require('./abstract');
 
 class SendResponseMediator extends abstract.ResponseMediator {
-  constructor(client) {
-    super(client);
-    this._commands = ['sendReceipt', 'sendError'];
+  constructor({ client, commands }) {
+    super({ client });
+    this._commands = commands;
     this._startToMediate();
   }
 

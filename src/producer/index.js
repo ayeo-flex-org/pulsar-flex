@@ -9,22 +9,29 @@ class Producer {
     this._requestId = 0;
     this._producerId = 0;
     this._producerName = '';
-    this._createCloseResponseMediator = new responseMediators.RequestIdResponseMediator(pulsar);
-    this._sendResponseMediator = new responseMediators.SendResponseMediator(pulsar);
+    this._createCloseResponseMediator = new responseMediators.RequestIdResponseMediator({
+      client: pulsar,
+      commands: ['producerSuccess', 'success', 'error'],
+    });
+    this._sendResponseMediator = new responseMediators.SendResponseMediator({
+      client: pulsar,
+      commands: ['sendReceipt', 'sendError'],
+    });
   }
 
   create = async () => {
     await this._client.connect();
-    const { producerName, sequenceId } = await services.create({
+    const { command } = await services.create({
       topic: this._topic,
       requestId: this._requestId,
       producerId: this._producerId,
       cnx: this._client.getCnx(),
       responseMediator: this._createCloseResponseMediator,
     });
+    const { producerName, lastSequenceId } = command;
     this._requestId++;
     this._producerName = producerName;
-    this._sequenceId = sequenceId;
+    this._sequenceId = lastSequenceId + 1;
     return producerName;
   };
 
@@ -46,7 +53,9 @@ class Producer {
       cnx: this._client.getCnx(),
       sequenceId: this._sequenceId,
       responseMediator: this._sendResponseMediator,
-    })({ payload, properties });
+      payload,
+      properties,
+    });
     this._sequenceId++;
     return sendPromise;
   };
