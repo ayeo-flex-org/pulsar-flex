@@ -7,7 +7,7 @@ const create = async ({ topic, requestId, producerId, cnx, responseMediator }) =
     requestId,
     producerId,
   });
-  return sendSimpleCommandRequest({ command: createProducer, responseMediator });
+  return sendSimpleCommandRequest({ command: createProducer }, responseMediator);
 };
 
 module.exports = create;

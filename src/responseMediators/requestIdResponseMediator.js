@@ -1,9 +1,9 @@
 const abstract = require('./abstract');
 
 class RequestIdResponseMediator extends abstract.ResponseMediator {
-  constructor(client) {
-    super(client);
-    this._commands = ['producerSuccess', 'success', 'error'];
+  constructor({ client, commands }) {
+    super({ client });
+    this._commands = commands;
     this._startToMediate();
   }
 
