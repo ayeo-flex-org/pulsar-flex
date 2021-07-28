@@ -16,7 +16,30 @@ const { Pulsar, Producer } = require('../src');
   console.log('producer');
   await producer.create();
   console.log('created');
-  await producer.send({ payload: 'bla' });
+  await producer.sendMessage({
+    payload: 'single',
+    properties: { galrose: 'flex', sinai: 'noob' },
+  });
+  await producer.sendBatch({
+    messages: [
+      {
+        payload: 'bla',
+        properties: { galrose: 'flex', sinai: 'noob' },
+      },
+      {
+        payload: 'ayeo',
+        properties: { galrose: 'flex', sinai: 'noob' },
+      },
+      {
+        payload: 'flex',
+        properties: { galrose: 'flex', sinai: 'noob' },
+      },
+      {
+        payload: 'dude',
+        properties: { galrose: 'flex', sinai: 'noob' },
+      },
+    ],
+  });
   console.log('sent');
   await producer.close();
   console.log('close');
