@@ -1,13 +1,11 @@
 const commands = require('../../commands');
 
 const close =
-  ({ producerId, getClient, getRequestId, setState }) =>
+  ({ producerId, client, requestId }) =>
   () => {
-    const { sendSimpleCommandRequest, responseEmitter } = getClient();
-    const requestId = getRequestId();
+    const { sendSimpleCommandRequest, responseEmitter } = client;
     const closeProducer = commands.closeProducer({ producerId, requestId });
     sendSimpleCommandRequest({ command: closeProducer });
-    setState({ requestId: requestId + 1 });
     return new Promise((resolve, reject) => {
       responseEmitter.on('success', (data) => {
         console.log('closed');

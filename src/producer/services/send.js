@@ -1,15 +1,14 @@
 const commands = require('../../commands');
 
 const send =
-  ({ getProducerName, getSequenceId, producerId, getClient, setState }) =>
+  ({ producerName, sequenceId, producerId, client, numMessages = 1 }) =>
   ({ payload, properties }) => {
-    const { responseEmitter, sendPayloadCommandRequest } = getClient();
-    const sequenceId = getSequenceId();
+    const { responseEmitter, sendPayloadCommandRequest } = client;
     const messageMetadata = commands.messageMetadata({
-      producerName: getProducerName(),
+      producerName,
       sequenceId,
     });
-    const sendMessages = commands.sendMessages({ producerId, numMessages: 1, sequenceId });
+    const sendMessages = commands.sendMessages({ producerId, numMessages, sequenceId });
     const payloadBuffer = Buffer.from(payload);
     sendPayloadCommandRequest({
       metadataCommand: messageMetadata,
@@ -18,14 +17,9 @@ const send =
     });
     return new Promise((resolve, reject) => {
       responseEmitter.on('sendReceipt', (data) => {
-        console.log('sent message');
-        setState({ sequenceId: sequenceId + 1 });
-        console.log(data);
         resolve();
       });
-      responseEmitter.on('sendError', (data) => {
-        console.log('send error');
-        console.log(data);
+      responseEmitter.on('sendError', () => {
         resolve();
       });
     });

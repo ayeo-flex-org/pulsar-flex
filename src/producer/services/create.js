@@ -1,28 +1,23 @@
 const commands = require('../../commands');
 
-const create =
-  ({ topic, getRequestId, producerId, client, setState }) =>
-  async () => {
-    const connectedClient = await client.connect();
-    setState({ client: connectedClient });
-    const { sendSimpleCommandRequest, responseEmitter } = connectedClient;
-    const createProducer = commands.createProducer({
-      topic,
-      requestId: getRequestId(),
-      producerId,
+const create = async ({ topic, requestId, producerId, client, setPromisePool }) => {
+  const { sendSimpleCommandRequest, responseEmitter } = client;
+  const createProducer = commands.createProducer({
+    topic,
+    requestId,
+    producerId,
+  });
+  sendSimpleCommandRequest({ command: createProducer });
+  return new Promise((resolve, reject) => {
+    responseEmitter.on('producerSuccess', (data) => {
+      const { lastSequenceId, producerName } = data.command;
+      const sequenceId = lastSequenceId + 1;
+      resolve({ producerName, sequenceId });
     });
-    sendSimpleCommandRequest({ command: createProducer });
-    return new Promise((resolve, reject) => {
-      responseEmitter.on('producerSuccess', (data) => {
-        const { lastSequenceId, producerName } = data.command;
-        const sequenceId = lastSequenceId + 1;
-        setState({ producerName, sequenceId });
-        resolve();
-      });
-      responseEmitter.on('error', () => {
-        resolve('failed to create producer');
-      });
+    responseEmitter.on('error', () => {
+      resolve('failed to create producer');
     });
-  };
+  });
+};
 
 module.exports = create;
