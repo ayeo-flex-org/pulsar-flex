@@ -10,7 +10,7 @@ const { Pulsar, Producer } = require('../src');
   const producer = new Producer({
     pulsar,
     topic: 'public/default/galrose',
-    producerConfiguration: {},
+    producerConfiguration: { producerAccessMode: 'EXCLUSIVE' },
   });
 
   console.log('producer');
