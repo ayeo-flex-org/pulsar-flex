@@ -9,12 +9,19 @@ const isSimpleCommand = (buffer) => {
 };
 
 const data = (buffer) => {
-  if (isSimpleCommand(buffer)) {
-    const { type, command } = serde.simpleCommand.deserializer(buffer);
-    emitter.data.emit(type, { command });
-  } else {
-    const { type, command, payload, metadata } = serde.payloadCommand.deserializer(buffer);
-    emitter.data.emit(type, { command, metadata, payload });
+  let currentBufferIndex = 0;
+  while (currentBufferIndex < buffer.length) {
+    const bufferSize = buffer.readInt32BE(currentBufferIndex) + 4;
+    if (isSimpleCommand(buffer)) {
+      const { type, command } = serde.simpleCommand.deserializer(buffer);
+      emitter.data.emit(type, { command });
+    } else {
+      const { type, command, payload, metadata } = serde.payloadCommand.deserializer(
+        buffer.slice(currentBufferIndex, currentBufferIndex + bufferSize)
+      );
+      emitter.data.emit(type, { command, metadata, payload });
+    }
+    currentBufferIndex += bufferSize;
   }
 };
 

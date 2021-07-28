@@ -8,7 +8,7 @@ const { Pulsar, Consumer } = require('../src');
 
   const myConsumer = new Consumer({
     client: pulsar,
-    topic: 'persistent://public/default/consumeron',
+    topic: 'persistent://public/default/consumerron3',
     subscription: 'subbon',
     subType: Consumer.SUB_TYPES.EXCLUSIVE,
     consumerName: 'Jerry',
@@ -20,5 +20,5 @@ const { Pulsar, Consumer } = require('../src');
       // ack(message.id);
     },
   });
-  await myConsumer.flow(100);
+  await myConsumer.flow(1000);
 })();
