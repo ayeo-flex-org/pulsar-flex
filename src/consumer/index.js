@@ -1,5 +1,6 @@
+const pulsar = require('..');
 const commands = require('../commands');
-
+const responseMediators = require('../responseMediators');
 const SUB_TYPES = {
   EXCLUSIVE: 0,
   SHARED: 1,
@@ -18,6 +19,11 @@ module.exports = class Consumer {
     this.consumerId = 0;
     this.requestId = 0;
     this.responser = null;
+
+    this.subscribeResponseMediator = new responseMediators.RequestIdResponseMediator({
+      client,
+      commands: ['success', 'error'],
+    });
 
     this.isSubscribed = false;
   }
