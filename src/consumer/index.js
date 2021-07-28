@@ -39,7 +39,7 @@ module.exports = class Consumer {
     });
 
     this.client = await this.client.connect();
-    this.client.sendSimpleCommandRequest({ command: subscribeCommand });
+    await this.client.sendSimpleCommandRequest({ command: subscribeCommand });
   }
 
   async flow(msgFlow) {

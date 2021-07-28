@@ -1,17 +1,9 @@
-const { Pulsar, Consumer } = require('../src');
+const { Pulsar } = require('../src');
 
 (async () => {
   const pulsar = new Pulsar({
-    broker: 'localhost:6650',
+    broker: '192.168.99.100:6650',
     timeout: 1000,
-  });
-
-  const myConsumer = new Consumer({
-    client: pulsar,
-    topic: 'persistent://public/default/consumeron',
-    subscription: 'subbon',
-    subType: Consumer.SUB_TYPES.EXCLUSIVE,
-    
   });
 
   await pulsar.connect();

@@ -1,10 +1,10 @@
 const Pulsar = require('./client');
-const producer = require('./producer');
+const Producer = require('./producer');
 const Consumer = require('./consumer');
 
 const pulsar = {
   Pulsar,
-  producer,
+  Producer,
   Consumer,
 };
 
