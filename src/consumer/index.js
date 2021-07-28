@@ -36,11 +36,6 @@ module.exports = class Consumer {
 
     this.client = await this.client.connect();
     this.client.sendSimpleCommandRequest({ command: subscribeCommand });
-    this.responser = resolveResponses({
-      emitter: this.client.responseEmitter,
-      events: ['success', 'error', 'message'],
-      func: (data) => console.log(data),
-    });
   }
 
   async flow(msgFlow) {
