@@ -1,5 +1,7 @@
 const commands = require('../commands');
 const responseMediators = require('../responseMediators');
+const services = require('./services');
+
 const SUB_TYPES = {
   EXCLUSIVE: 0,
   SHARED: 1,
@@ -62,9 +64,7 @@ module.exports = class Consumer {
 
   async subscribe() {
     await this.client.connect({ topic: this.topic });
-
-    // naming validations
-    const subscribeCommand = commands.subscribe({
+    await services.subscribe({
       topic: this.topic,
       subscription: this.subscription,
       subType: this.subType,
@@ -72,11 +72,8 @@ module.exports = class Consumer {
       consumerName: this.consumerName,
       readCompacted: this.readCompacted,
       requestId: this.requestId++,
+      responseMediator: this.subscribeResponseMediator,
     });
-    const a = await this.client
-      .getCnx()
-      .sendSimpleCommandRequest({ command: subscribeCommand }, this.subscribeResponseMediator);
-    console.log(a);
   }
 
   flow = async (flowSize) => {
