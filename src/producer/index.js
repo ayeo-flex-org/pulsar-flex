@@ -1,5 +1,7 @@
 const services = require('./services');
 const responseMediators = require('../responseMediators');
+const errors = require('../errors');
+const utils = require('../utils');
 
 class Producer {
   constructor({ pulsar, topic, producerConfiguration }) {
@@ -33,22 +35,23 @@ class Producer {
     this._requestId++;
     this._producerName = producerName;
     this._sequenceId = lastSequenceId + 1;
-    return producerName;
+    return true;
   };
 
   close = async () => {
-    const closePromise = services.close({
+    await services.close({
       producerId: this._producerId,
       cnx: this._client.getCnx(),
       requestId: this._requestId,
       responseMediator: this._createCloseResponseMediator,
     });
     this._requestId++;
-    return closePromise;
+    return true;
   };
 
   sendMessage = async ({ payload, properties }) => {
-    const sendPromise = services.sendMessage({
+    if (!utils.isNil(payload)) throw new errors.PulsarFlexNoPayloadError();
+    await services.sendMessage({
       producerId: this._producerId,
       producerName: this._producerName,
       cnx: this._client.getCnx(),
@@ -58,11 +61,11 @@ class Producer {
       properties,
     });
     this._sequenceId++;
-    return sendPromise;
+    return true;
   };
 
   sendBatch = async ({ messages }) => {
-    const sendPromise = services.sendBatch({
+    await services.sendBatch({
       producerId: this._producerId,
       producerName: this._producerName,
       cnx: this._client.getCnx(),
@@ -71,7 +74,7 @@ class Producer {
       messages,
     });
     this._sequenceId++;
-    return sendPromise;
+    return true;
   };
 }
 

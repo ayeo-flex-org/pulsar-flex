@@ -1,4 +1,6 @@
 const commands = require('../../commands');
+const errors = require('../../errors');
+const utils = require('../../utils');
 
 const create = async ({
   topic,
@@ -15,7 +17,10 @@ const create = async ({
     producerId,
     ...producerConfiguration,
   });
-  return sendSimpleCommandRequest({ command: createProducer }, responseMediator);
+  const { command } = await sendSimpleCommandRequest({ command: createProducer }, responseMediator);
+  if (!utils.isNil(command.error))
+    throw new errors.PulsarFlexProducerCreationError(command.message);
+  return { command };
 };
 
 module.exports = create;
