@@ -26,7 +26,7 @@ class ResponseMediator {
     const id = this._idFunc(this._parseCommand(data));
     return new Promise((resolve, reject) => {
       this._requests[id] = { resolve };
-      setTimeout(reject, timeout);
+      // setTimeout(reject, timeout);
     });
   }
 }

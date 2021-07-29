@@ -20,7 +20,7 @@ const sendBatch = async ({
     metadata: commands.singleMessageMetadata(message),
     payload: message.payload,
   }));
-  const idk = await sendPayloadBatchCommandRequest(
+  await sendPayloadBatchCommandRequest(
     {
       metadataCommand: messageMetadata,
       command: sendMessages,
@@ -28,7 +28,6 @@ const sendBatch = async ({
     },
     responseMediator
   );
-  console.log(JSON.stringify(idk));
 };
 
 module.exports = sendBatch;
