@@ -5,6 +5,7 @@ module.exports = ({ host, port }) => {
   return new Promise((resolve, reject) => {
     const socket = net.connect({ host, port }, () => resolve(socket));
 
+    socket.on('error', reject);
     socket.setKeepAlive(true, KEEP_ALIVE_DELAY);
   });
 };
