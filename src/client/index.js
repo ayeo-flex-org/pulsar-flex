@@ -1,36 +1,62 @@
 const emitter = require('./emitter');
-const commands = require('../commands');
 const connection = require('./network/connection');
 const services = require('./services');
 const responsesMediator = require('../responseMediators');
-const errors = require('../errors');
 
 class Client {
-  constructor({ broker, timeout, jwt }) {
-    this._broker = broker;
+  constructor({ serviceDiscovery, timeout, jwt }) {
+    this._serviceDiscovery = serviceDiscovery;
     this._timeout = timeout;
+    this._requestId = 0;
     this._jwt = jwt;
     this._cnx = null;
     this._responseMediator = null;
+    this._requestIdResponseMediator = null;
+
+    this._initMediators();
   }
 
-  async connect() {
+  _initMediators() {
     this._responseMediator = new responsesMediator.NoIdResponseMediator({
       commands: ['connected', 'ping', 'pong', 'error'],
       client: this,
     });
 
-    const [host, port] = this._broker.split(':');
-    const connectCommand = commands.connect({ protocolVersion: 17, jwt: this._jwt });
+    this._requestIdResponseMediator = new responsesMediator.NoIdResponseMediator({
+      commands: ['lookuptopicresponse'],
+      client: this,
+    });
+  }
+
+  async connect({ topic }) {
+    const [serviceDiscoveryHost, serviceDiscoveryPort] = this._serviceDiscovery.split(':');
+    const discoveryCnx = await connection({
+      host: serviceDiscoveryHost,
+      port: serviceDiscoveryPort,
+    });
+
+    await services.connector({
+      cnx: discoveryCnx,
+      responseMediator: this._responseMediator,
+      jwt: this._jwt,
+    });
+
+    const { host, port } = await services.lookup({
+      discoveryCnx,
+      topic: topic,
+      responseMediator: this._requestIdResponseMediator,
+      requestId: ++this._requestId,
+    });
+
+    discoveryCnx.close();
 
     this._cnx = await connection({ host, port });
 
-    const { command } = await this._cnx.sendSimpleCommandRequest(
-      { command: connectCommand },
-      this._responseMediator
-    );
-
-    if (command.error) throw new errors.PulsarFlexConnectionError({ message: command.message });
+    await services.connector({
+      cnx: this._cnx,
+      responseMediator: this._responseMediator,
+      jwt: this._jwt,
+    });
 
     services.pinger({
       cnx: this._cnx,
