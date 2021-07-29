@@ -10,10 +10,18 @@ const SUB_TYPES = {
 const ACK_TYPES = {
   INDIVIDUAL: 0,
   CUMULATIVE: 1,
-}
+};
 
 module.exports = class Consumer {
-  constructor({ client, topic, subscription, subType, consumerName, readCompacted = false, receiveQueueSize =  500}) {
+  constructor({
+    client,
+    topic,
+    subscription,
+    subType,
+    consumerName,
+    readCompacted = false,
+    receiveQueueSize = 500,
+  }) {
     this.client = client;
     this.topic = topic;
     this.subscription = subscription;
@@ -36,10 +44,10 @@ module.exports = class Consumer {
       commands: ['message'],
     });
 
-    this.ackResponse = new responseMediators.RequestIdResponseMediator({ 
+    this.ackResponse = new responseMediators.RequestIdResponseMediator({
       client,
-      commands: ['ackresponse']
-    })
+      commands: ['ackresponse'],
+    });
 
     this.isSubscribed = false;
   }
@@ -47,13 +55,13 @@ module.exports = class Consumer {
   static get SUB_TYPES() {
     return SUB_TYPES;
   }
-  
+
   static get ACK_TYPES() {
     return ACK_TYPES;
   }
 
   async subscribe() {
-    await this.client.connect();
+    await this.client.connect({ topic: this.topic });
 
     // naming validations
     const subscribeCommand = commands.subscribe({
@@ -77,19 +85,19 @@ module.exports = class Consumer {
       messagePermits: flowSize,
     });
     await this.client.getCnx().sendSimpleCommandRequest({ command: commandFlow }, this.noId);
-  }
+  };
 
   async unsubscribe() {}
 
   _ack = async ({ messageIdData, ackType }) => {
-      const commandAck = commands.ack({
-        consumerId: this.consumerId,
-        messageIdData,
-        ackType,
-        requestId: this.requestId++,
-      })
-      await this.client.getCnx().sendSimpleCommandRequest({command: commandAck}, this.ackResponse)
-  }
+    const commandAck = commands.ack({
+      consumerId: this.consumerId,
+      messageIdData,
+      ackType,
+      requestId: this.requestId++,
+    });
+    await this.client.getCnx().sendSimpleCommandRequest({ command: commandAck }, this.ackResponse);
+  };
 
   run = async ({ onMessage = null, autoAck = true }) => {
     this.client.getResponseEvents().on('message', async (data) => {
@@ -97,25 +105,24 @@ module.exports = class Consumer {
       // console.log(this.receiveQueue);
       console.log(data.payload.toString());
       if (autoAck) {
-        await this._ack({messageIdData: data.command.messageId, ackType: ACK_TYPES.INDIVIDUAL})
+        await this._ack({ messageIdData: data.command.messageId, ackType: ACK_TYPES.INDIVIDUAL });
       }
       if (--this.curFlow === 0) {
         this.curFlow = this.receiveQueueSize;
         await this.flow(this.receiveQueueSize);
       }
-      onMessage({ 
+      onMessage({
         message: data.payload.toString(),
         metadata: data.metadata,
         command: data.command,
-        ack: (specifiedAckType) => 
-        this._ack({ 
-          messageIdData: data.command.messageId, 
-          ackType: specifiedAckType ? specifiedAckType : ACK_TYPES.INDIVIDUAL 
-        }), 
+        ack: (specifiedAckType) =>
+          this._ack({
+            messageIdData: data.command.messageId,
+            ackType: specifiedAckType ? specifiedAckType : ACK_TYPES.INDIVIDUAL,
+          }),
       });
-      
     });
 
     await this.flow(this.receiveQueueSize);
-  }
+  };
 };
