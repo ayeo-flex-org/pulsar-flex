@@ -8,25 +8,31 @@ const isSimpleCommand = (buffer) => {
   return totalSize - commandSize === 4;
 };
 
-let latestChunk = null;
+// Mutate scope in fave of performance
+let cachedChunk = null;
 
 const data = (buffer) => {
   let currentBufferIndex = 0;
-  buffer = latestChunk ? Buffer.concat([latestChunk, buffer]) : buffer;
+
+  buffer = cachedChunk ? Buffer.concat([cachedChunk, buffer]) : buffer;
+  cachedChunk = null;
+
   while (currentBufferIndex < buffer.length) {
+    // if the totalSize of the buffer is unreadable (min is 4 bytes) chunk and wait for next buffer
     if (buffer.length - currentBufferIndex < 4) {
-      latestChunk = buffer.slice(currentBufferIndex, buffer.length);
+      cachedChunk = buffer.slice(currentBufferIndex, buffer.length);
       return;
     }
 
-    const bufferSize = buffer.readUInt32BE(currentBufferIndex) + 4;
+    const expectedFrameSize = buffer.readUInt32BE(currentBufferIndex) + 4;
 
-    if (bufferSize + currentBufferIndex > buffer.length) {
-      latestChunk = buffer.slice(currentBufferIndex, buffer.length);
+    // if the current buffer is not in the expected size, wait for the next buffer and chunk it
+    if (expectedFrameSize + currentBufferIndex > buffer.length) {
+      cachedChunk = buffer.slice(currentBufferIndex, buffer.length);
       return;
     }
 
-    const slicedBuffer = buffer.slice(currentBufferIndex, currentBufferIndex + bufferSize);
+    const slicedBuffer = buffer.slice(currentBufferIndex, currentBufferIndex + expectedFrameSize);
 
     if (isSimpleCommand(buffer)) {
       const { type, command } = serde.simpleCommand.deserializer(slicedBuffer);
@@ -35,7 +41,7 @@ const data = (buffer) => {
       const { type, command, payload, metadata } = serde.payloadCommand.deserializer(slicedBuffer);
       emitter.data.emit(type, { command, metadata, payload });
     }
-    currentBufferIndex += bufferSize;
+    currentBufferIndex += expectedFrameSize;
   }
 };
 

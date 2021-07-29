@@ -2,7 +2,7 @@ const { Pulsar, Consumer } = require('../src');
 
 (async () => {
   const pulsar = new Pulsar({
-    broker: 'localhost:6650',
+    broker: '192.168.99.100:6650',
     timeout: 1000,
   });
 
