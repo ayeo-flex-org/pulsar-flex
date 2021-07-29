@@ -4,8 +4,8 @@ const services = require('./services');
 const responsesMediator = require('../responseMediators');
 
 class Client {
-  constructor({ serviceDiscovery, timeout, jwt }) {
-    this._serviceDiscovery = serviceDiscovery;
+  constructor({ discoveryServers, timeout, jwt }) {
+    this._discoveryServers = discoveryServers;
     this._timeout = timeout;
     this._requestId = 0;
     this._jwt = jwt;
@@ -29,26 +29,16 @@ class Client {
   }
 
   async connect({ topic }) {
-    const [serviceDiscoveryHost, serviceDiscoveryPort] = this._serviceDiscovery.split(':');
-    const discoveryCnx = await connection({
-      host: serviceDiscoveryHost,
-      port: serviceDiscoveryPort,
-    });
-
-    await services.connector({
-      cnx: discoveryCnx,
-      responseMediator: this._responseMediator,
-      jwt: this._jwt,
-    });
-
     const { host, port } = await services.lookup({
-      discoveryCnx,
+      discoveryServers: this._discoveryServers,
       topic: topic,
+      jwt: this._jwt,
       responseMediator: this._requestIdResponseMediator,
       requestId: ++this._requestId,
+      connectorService: services.connector,
+      connectorServiceResponseMediator: this._responseMediator,
     });
-
-    discoveryCnx.close();
+    console.log(host, port);
 
     this._cnx = await connection({ host, port });
 
