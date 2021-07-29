@@ -11,6 +11,7 @@ const { Pulsar, Producer } = require('../src');
     pulsar,
     topic: 'public/default/galrose',
     producerConfiguration: { producerAccessMode: 'EXCLUSIVE' },
+    reconnectTimeout: 5000,
   });
   const producer1 = new Producer({
     pulsar,

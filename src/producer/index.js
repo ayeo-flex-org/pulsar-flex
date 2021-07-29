@@ -55,6 +55,7 @@ class Producer {
   };
 
   sendMessage = async ({ payload, properties }) => {
+    while (!this._connected) {}
     if (!utils.isNil(payload)) throw new errors.PulsarFlexNoPayloadError();
     await services.sendMessage({
       producerId: this._producerId,
@@ -70,6 +71,7 @@ class Producer {
   };
 
   sendBatch = async ({ messages }) => {
+    while (!this._connected) {}
     await services.sendBatch({
       producerId: this._producerId,
       producerName: this._producerName,
