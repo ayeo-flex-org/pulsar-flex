@@ -9,6 +9,7 @@ const subscribe = require('./subscribe');
 const flow = require('./flow');
 const closeConsumer = require('./closeConsumer');
 const singleMessageMetadata = require('./singleMessageMetadata');
+const lookup = require('./lookup');
 
 module.exports = {
   connect,
@@ -22,4 +23,5 @@ module.exports = {
   flow,
   closeConsumer,
   singleMessageMetadata,
+  lookup
 };

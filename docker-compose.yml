@@ -10,6 +10,7 @@ services:
       - 8080
       - 6650
     environment:
+      advertisedAddress: 192.168.99.100
       PULSAR_MEM: " -Xms128m -Xmx128m -XX:MaxDirectMemorySize=128m"
     command: |
       /bin/bash -c "
