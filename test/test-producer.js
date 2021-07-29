@@ -12,14 +12,24 @@ const { Pulsar, Producer } = require('../src');
     topic: 'public/default/galrose',
     producerConfiguration: { producerAccessMode: 'EXCLUSIVE' },
   });
+  const producer1 = new Producer({
+    pulsar,
+    topic: 'public/default/galrose',
+    producerConfiguration: { producerAccessMode: 'EXCLUSIVE' },
+  });
 
   console.log('producer');
   await producer.create();
+  // try {
+  //   await producer1.create();
+  // } catch (e) {
+  //   console.log(e);
+  // }
   console.log('created');
-  await producer.sendMessage({
-    payload: 'single',
-    properties: { galrose: 'flex', sinai: 'noob' },
-  });
+  // await producer.sendMessage({
+  //   properties: { galrose: 'flex', sinai: 'noob' },
+  // });
+  console.log('sent first');
   await producer.sendBatch({
     messages: [
       {
@@ -42,5 +52,6 @@ const { Pulsar, Producer } = require('../src');
   });
   console.log('sent');
   await producer.close();
+  await producer1.close();
   console.log('close');
 })();

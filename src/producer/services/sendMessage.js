@@ -1,6 +1,6 @@
 const commands = require('../../commands');
 
-const sendMessage = ({
+const sendMessage = async ({
   producerName,
   sequenceId,
   producerId,
@@ -16,7 +16,7 @@ const sendMessage = ({
     properties,
   });
   const sendMessages = commands.sendMessages({ producerId, sequenceId });
-  sendPayloadCommandRequest(
+  await sendPayloadCommandRequest(
     {
       metadataCommand: messageMetadata,
       command: sendMessages,
