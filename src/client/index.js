@@ -3,6 +3,7 @@ const commands = require('../commands');
 const connection = require('./network/connection');
 const services = require('./services');
 const responsesMediator = require('../responseMediators');
+const errors = require('../errors');
 
 class Client {
   constructor({ broker, timeout, jwt }) {
@@ -15,7 +16,7 @@ class Client {
 
   async connect() {
     this._responseMediator = new responsesMediator.NoIdResponseMediator({
-      commands: ['connected', 'ping', 'pong'],
+      commands: ['connected', 'ping', 'pong', 'error'],
       client: this,
     });
 
@@ -24,7 +25,12 @@ class Client {
 
     this._cnx = await connection({ host, port });
 
-    await this._cnx.sendSimpleCommandRequest({ command: connectCommand }, this._responseMediator);
+    const { command } = await this._cnx.sendSimpleCommandRequest(
+      { command: connectCommand },
+      this._responseMediator
+    );
+
+    if (command.error) throw new errors.PulsarFlexConnectionError({ message: command.message });
 
     services.pinger({
       cnx: this._cnx,
