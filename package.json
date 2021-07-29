@@ -10,8 +10,9 @@
     "setup-jwt": "docker-compose -f docker-compose-jwt.yml up",
     "get-jwt": "docker exec pulsar cat /pulsar/conf/admin-jwt.txt",
     "interact": "docker exec -it pulsar /bin/bash",
-    "create": "docker exec pulsar ./bin/pulsar-admin topics create public/default/consumerron3 && docker exec pulsar ./bin/pulsar-admin topics create-subscription -s subbon public/default/consumerron3",
-    "perf": "docker exec pulsar ./bin/pulsar-perf produce -r 10 -s 10 public/default/consumerron3"
+    "create": "docker exec pulsar ./bin/pulsar-admin topics create public/default/consumerron3",
+    "sub": "docker exec pulsar ./bin/pulsar-admin topics create-subscription -s subbon public/default/consumerron3",
+    "perf": "docker exec pulsar ./bin/pulsar-perf produce -r 1 -s 10 public/default/consumerron3"
   },
   "devDependencies": {
     "@types/google-protobuf": "^3.15.3",
