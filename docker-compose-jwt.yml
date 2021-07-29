@@ -10,6 +10,7 @@ services:
       - 8080
       - 6650
     environment:
+      advertisedAddress: 192.168.99.100
       authenticationEnabled: "true"
       authenticationProviders: "org.apache.pulsar.broker.authentication.AuthenticationProviderToken"
       authorizationEnabled: "true"

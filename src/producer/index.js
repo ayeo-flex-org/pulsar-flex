@@ -26,7 +26,7 @@ class Producer {
   _setConnected = () => (this._connected = false);
 
   create = async () => {
-    await this._client.connect();
+    await this._client.connect({ topic: this._topic });
     this._connected = true;
     const { command } = await services.create({
       topic: this._topic,
