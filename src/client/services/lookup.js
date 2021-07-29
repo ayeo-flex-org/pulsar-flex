@@ -41,8 +41,7 @@ const lookup = async ({
 
     return { host, port };
   } catch (e) {
-    if (e.name === 'PulsarFlexTopicLookupError') throw e;
-
+    if (e.name === 'PulsarFlexTopicLookupError' && e.name === 'PulsarFlexConnectionError') throw e;
     console.warn('Could not connect', e);
     if (index >= discoveryServers.length - 1) {
       return new Promise((resolve, reject) =>
