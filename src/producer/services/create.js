@@ -19,7 +19,7 @@ const create = async ({
   });
   const { command } = await sendSimpleCommandRequest({ command: createProducer }, responseMediator);
   if (!utils.isNil(command.error))
-    throw new errors.PulsarFlexProducerCreationError(command.message);
+    throw new errors.PulsarFlexProducerCreationError({ message: command.message });
   return { command };
 };
 
