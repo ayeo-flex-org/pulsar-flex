@@ -3,6 +3,9 @@ const resolver = require('../resolver');
 const serde = require('../serde');
 
 const sendRequest = (request, nonSerializedData, socket, responseMediator) => {
+  if (socket.readyState !== 'open') {
+    throw new Error('benZonaLamaAsitaEtZe');
+  }
   socket.write(request, 'binary');
 
   return responseMediator.response({ data: nonSerializedData });
@@ -13,11 +16,8 @@ const connection = async ({ host, port }) => {
     host,
     port,
     onData: resolver.data,
-    onEnd: () => console.log('fin'),
-    onTimeout: () => console.log('timed out buddy'),
-    onError: () => console.log('lol'),
+    onError: (e) => console.log(e),
   });
-
   return {
     sendSimpleCommandRequest: (dataToSerialize, responseMediator) => {
       return sendRequest(
@@ -46,8 +46,14 @@ const connection = async ({ host, port }) => {
       );
     },
 
-    close: () => socket.destroy(),
+    addCleanUpListener(cleanUp) {
+      socket.once('close', cleanUp);
+    },
+
+    close: () => {
+      socket.end();
+      socket.unref();
+    },
   };
 };
-
 module.exports = connection;

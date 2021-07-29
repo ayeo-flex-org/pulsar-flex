@@ -1,8 +1,12 @@
 const { Pulsar, Producer } = require('../src');
 
+process.on('unhandledRejection', (reason, p) => {
+  console.log('Unhandled Rejection at: Promise', p, 'reason:', reason);
+});
+
 (async () => {
   const pulsar = new Pulsar({
-    discoveryServers: ['blabla:6650', 'localhost:6650', '20.101.147.31:6650'],
+    discoveryServers: ['192.168.99.100:6650'],
     timeout: 1000,
   });
 
@@ -11,13 +15,13 @@ const { Pulsar, Producer } = require('../src');
     pulsar,
     topic: 'public/default/galrose',
     producerConfiguration: { producerAccessMode: 'EXCLUSIVE' },
-    reconnectTimeout: 5000,
+    reconnectTimeout: 10000,
   });
-  const producer1 = new Producer({
-    pulsar,
-    topic: 'public/default/galrose',
-    producerConfiguration: { producerAccessMode: 'EXCLUSIVE' },
-  });
+  // const producer1 = new Producer({
+  //   pulsar,
+  //   topic: 'public/default/galrose',
+  //   producerConfiguration: { producerAccessMode: 'EXCLUSIVE' },
+  // });
 
   console.log('producer');
   await producer.create();
@@ -30,30 +34,34 @@ const { Pulsar, Producer } = require('../src');
   // await producer.sendMessage({
   //   properties: { galrose: 'flex', sinai: 'noob' },
   // });
-  console.log('sent first');
+  //console.log('sent first');
   while (true) {
-    await producer.sendBatch({
-      messages: [
-        {
-          payload: 'bla',
-          properties: { galrose: 'flex', sinai: 'noob' },
-        },
-        {
-          payload: 'ayeo',
-          properties: { galrose: 'flex', sinai: 'noob' },
-        },
-        {
-          payload: 'flex',
-          properties: { galrose: 'flex', sinai: 'noob' },
-        },
-        {
-          payload: 'dude',
-          properties: { galrose: 'flex', sinai: 'noob' },
-        },
-      ],
-    });
+    await new Promise((resolve) => setTimeout(resolve, 10000));
+    try {
+      await producer.sendBatch({
+        messages: [
+          {
+            payload: 'bla',
+            properties: { galrose: 'flex', sinai: 'noob' },
+          },
+          {
+            payload: 'ayeo',
+            properties: { galrose: 'flex', sinai: 'noob' },
+          },
+          {
+            payload: 'flex',
+            properties: { galrose: 'flex', sinai: 'noob' },
+          },
+          {
+            payload: 'dude',
+            properties: { galrose: 'flex', sinai: 'noob' },
+          },
+        ],
+      });
+    } catch (e) {
+      console.log(e);
+    }
   }
-  await producer.close();
-  await producer1.close();
+  //  await producer.close();
   console.log('close');
 })();

@@ -3,9 +3,10 @@ const reconnect = (client, create, setConnected, { reconnectTimeout = 1000 }) =>
   responseEvents.on('closeProducer', () => {
     setConnected(false);
     client.getCnx().close();
-    setTimeout(function () {
-      create();
-    }, reconnectTimeout);
+
+    create()
+      .then(setConnected(true))
+      .catch(() => console.log('Should handle when no reconnected successfully'));
   });
 };
 

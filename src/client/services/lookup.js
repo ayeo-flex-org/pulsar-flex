@@ -18,10 +18,7 @@ const lookup = async ({
 
     const lookupCommand = commands.lookup({ topic, requestId });
 
-    const discoveryCnx = await connection({
-      host: serviceHost,
-      port: servicePort,
-    });
+    const discoveryCnx = await connection({ host: serviceHost, port: servicePort });
 
     await connectorService({
       cnx: discoveryCnx,
@@ -34,14 +31,16 @@ const lookup = async ({
       responseMediator
     );
 
-    if (command.error) throw new errors.PulsarFlexTopicLookupError({ message: command.message });
+    discoveryCnx.close();
 
+    if (command.error) throw new errors.PulsarFlexTopicLookupError({ message: command.message });
     const [protocolName, hostPort] = command.brokerserviceurl.split('://');
     const [host, port] = hostPort.split(':');
 
     return { host, port };
   } catch (e) {
-    if (e.name === 'PulsarFlexTopicLookupError' && e.name === 'PulsarFlexConnectionError') throw e;
+    if (e && e.name === 'PulsarFlexTopicLookupError' && e.name === 'PulsarFlexConnectionError')
+      throw e;
     console.warn('Could not connect', e);
     if (index >= discoveryServers.length - 1) {
       return new Promise((resolve, reject) =>
