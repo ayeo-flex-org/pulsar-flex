@@ -1,6 +1,13 @@
 const commands = require('../../commands');
 
-const sendBatch = ({ producerName, sequenceId, producerId, cnx, responseMediator, messages }) => {
+const sendBatch = async ({
+  producerName,
+  sequenceId,
+  producerId,
+  cnx,
+  responseMediator,
+  messages,
+}) => {
   const { sendPayloadBatchCommandRequest } = cnx;
   const numMessages = messages.length;
   const messageMetadata = commands.messageMetadata({
@@ -13,7 +20,7 @@ const sendBatch = ({ producerName, sequenceId, producerId, cnx, responseMediator
     metadata: commands.singleMessageMetadata(message),
     payload: message.payload,
   }));
-  return sendPayloadBatchCommandRequest(
+  const idk = await sendPayloadBatchCommandRequest(
     {
       metadataCommand: messageMetadata,
       command: sendMessages,
@@ -21,6 +28,7 @@ const sendBatch = ({ producerName, sequenceId, producerId, cnx, responseMediator
     },
     responseMediator
   );
+  console.log(JSON.stringify(idk));
 };
 
 module.exports = sendBatch;

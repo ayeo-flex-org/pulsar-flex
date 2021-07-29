@@ -2,7 +2,7 @@ const { Pulsar, Producer } = require('../src');
 
 (async () => {
   const pulsar = new Pulsar({
-    discoveryServers: ['blabla:6650', 'localhost:6650', '192.168.99.100:6650'],
+    discoveryServers: ['blabla:6650', 'localhost:6650', '20.101.147.31:6650'],
     timeout: 1000,
   });
 
@@ -30,27 +30,28 @@ const { Pulsar, Producer } = require('../src');
   //   properties: { galrose: 'flex', sinai: 'noob' },
   // });
   console.log('sent first');
-  await producer.sendBatch({
-    messages: [
-      {
-        payload: 'bla',
-        properties: { galrose: 'flex', sinai: 'noob' },
-      },
-      {
-        payload: 'ayeo',
-        properties: { galrose: 'flex', sinai: 'noob' },
-      },
-      {
-        payload: 'flex',
-        properties: { galrose: 'flex', sinai: 'noob' },
-      },
-      {
-        payload: 'dude',
-        properties: { galrose: 'flex', sinai: 'noob' },
-      },
-    ],
-  });
-  console.log('sent');
+  while (true) {
+    await producer.sendBatch({
+      messages: [
+        {
+          payload: 'bla',
+          properties: { galrose: 'flex', sinai: 'noob' },
+        },
+        {
+          payload: 'ayeo',
+          properties: { galrose: 'flex', sinai: 'noob' },
+        },
+        {
+          payload: 'flex',
+          properties: { galrose: 'flex', sinai: 'noob' },
+        },
+        {
+          payload: 'dude',
+          properties: { galrose: 'flex', sinai: 'noob' },
+        },
+      ],
+    });
+  }
   await producer.close();
   await producer1.close();
   console.log('close');
