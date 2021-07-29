@@ -22,7 +22,7 @@ class Producer {
   }
 
   create = async () => {
-    await this._client.connect();
+    await this._client.connect({ topic: this._topic });
     const { command } = await services.create({
       topic: this._topic,
       requestId: this._requestId,
