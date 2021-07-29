@@ -38,7 +38,6 @@ class Client {
       connectorService: services.connector,
       connectorServiceResponseMediator: this._responseMediator,
     });
-    console.log(host, port);
 
     this._cnx = await connection({ host, port });
 
