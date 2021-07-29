@@ -15,6 +15,7 @@ const lookup = async ({
 }) => {
   try {
     const [serviceHost, servicePort] = discoveryServers[index].split(':');
+
     const lookupCommand = commands.lookup({ topic, requestId });
 
     const discoveryCnx = await connection({
@@ -41,7 +42,26 @@ const lookup = async ({
     return { host, port };
   } catch (e) {
     console.warn('Could not connect', e);
-    if (index > discoveryServers.length) throw new Error();
+    if (index >= discoveryServers.length - 1) {
+      return new Promise((resolve, reject) =>
+        setTimeout(() =>
+          resolve(
+            lookup({
+              discoveryServers,
+              responseMediator,
+              topic,
+              jwt,
+              requestId,
+              connectorService,
+              reconnectionTimeMs,
+              connectorServiceResponseMediator,
+              index: 0,
+            }),
+            reconnectionTimeMs
+          )
+        )
+      );
+    }
     // if any exception is met lets try to connect to another broker
     return lookup({
       discoveryServers,
