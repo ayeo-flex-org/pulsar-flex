@@ -8,17 +8,16 @@ const { Pulsar, Consumer } = require('../src');
 
   const myConsumer = new Consumer({
     client: pulsar,
-    topic: 'persistent://public/default/consumerron3',
+    topic: 'persistent://public/default/consumeron',
     subscription: 'subbon',
     subType: Consumer.SUB_TYPES.EXCLUSIVE,
     consumerName: 'Jerry',
-    readCompacted: false,
+    receiveQueueSize: 1,
   });
   await myConsumer.subscribe();
   myConsumer.run({
     onMessage: ({ ack, message, data }) => {
-      // ack(message.id);
+      // console.log('process');
     },
   });
-  await myConsumer.flow(1000);
 })();
