@@ -10,7 +10,7 @@ class Producer {
     this._producerConfigiration = producerConfiguration;
     this._requestId = 0;
     this._producerId = 0;
-    this._producerName = '';
+    this._producerName = null;
     this._createCloseResponseMediator = new responseMediators.RequestIdResponseMediator({
       client: pulsar,
       commands: ['producerSuccess', 'success', 'error'],
@@ -19,10 +19,15 @@ class Producer {
       client: pulsar,
       commands: ['sendReceipt', 'sendError'],
     });
+    this._connected = false;
+    services.reconnect(this._client, this.create, this._setConnected, this._producerConfigiration);
   }
+
+  _setConnected = () => (this._connected = false);
 
   create = async () => {
     await this._client.connect();
+    this._connected = true;
     const { command } = await services.create({
       topic: this._topic,
       requestId: this._requestId,

@@ -30,27 +30,28 @@ const { Pulsar, Producer } = require('../src');
   //   properties: { galrose: 'flex', sinai: 'noob' },
   // });
   console.log('sent first');
-  await producer.sendBatch({
-    messages: [
-      {
-        payload: 'bla',
-        properties: { galrose: 'flex', sinai: 'noob' },
-      },
-      {
-        payload: 'ayeo',
-        properties: { galrose: 'flex', sinai: 'noob' },
-      },
-      {
-        payload: 'flex',
-        properties: { galrose: 'flex', sinai: 'noob' },
-      },
-      {
-        payload: 'dude',
-        properties: { galrose: 'flex', sinai: 'noob' },
-      },
-    ],
-  });
-  console.log('sent');
+  while (true) {
+    await producer.sendBatch({
+      messages: [
+        {
+          payload: 'bla',
+          properties: { galrose: 'flex', sinai: 'noob' },
+        },
+        {
+          payload: 'ayeo',
+          properties: { galrose: 'flex', sinai: 'noob' },
+        },
+        {
+          payload: 'flex',
+          properties: { galrose: 'flex', sinai: 'noob' },
+        },
+        {
+          payload: 'dude',
+          properties: { galrose: 'flex', sinai: 'noob' },
+        },
+      ],
+    });
+  }
   await producer.close();
   await producer1.close();
   console.log('close');

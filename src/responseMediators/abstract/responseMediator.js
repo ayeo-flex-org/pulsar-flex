@@ -22,10 +22,11 @@ class ResponseMediator {
 
   _idFunc() {}
 
-  response({ data }) {
+  response({ data, timeout = 5000 }) {
     const id = this._idFunc(this._parseCommand(data));
     return new Promise((resolve, reject) => {
-      this._requests[id] = { resolve, reject };
+      this._requests[id] = { resolve };
+      setTimeout(reject, timeout);
     });
   }
 }
