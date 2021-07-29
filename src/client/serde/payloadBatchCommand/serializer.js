@@ -14,8 +14,8 @@ const buildPayloadCommand = ({ command, metadataCommand, payload }) => {
   const checkSumBuffer = Buffer.alloc(common.bytes.CRC);
   const metadataSizeBuffer = Buffer.alloc(common.bytes.METADATA_SIZE);
 
-  commandSizeBuffer.writeInt32BE(messageBinary.length);
-  metadataSizeBuffer.writeInt32BE(metadataBinary.length);
+  commandSizeBuffer.writeUInt32BE(messageBinary.length);
+  metadataSizeBuffer.writeUInt32BE(metadataBinary.length);
   magicNumberBuffer.writeInt16BE(0x0e01);
 
   const payloadBuffer = Buffer.concat(
@@ -24,17 +24,17 @@ const buildPayloadCommand = ({ command, metadataCommand, payload }) => {
       const metadataLengthBuffer = Buffer.alloc(common.bytes.METADATA_SIZE);
       const payloadBuffer = Buffer.from(payload);
 
-      metadataLengthBuffer.writeInt32BE(serializedMetadata.length);
+      metadataLengthBuffer.writeUInt32BE(serializedMetadata.length);
 
       return Buffer.concat([metadataLengthBuffer, serializedMetadata, payloadBuffer]);
     })
   );
 
-  checkSumBuffer.writeInt32BE(
+  checkSumBuffer.writeUInt32BE(
     crc.compute(Buffer.concat([metadataSizeBuffer, metadataBinary, payloadBuffer]))
   );
 
-  totalSizeBuffer.writeInt32BE(
+  totalSizeBuffer.writeUInt32BE(
     messageBinary.length +
       commandSizeBuffer.length +
       magicNumberBuffer.length +

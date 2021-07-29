@@ -5,6 +5,9 @@ const createProducer = require('./createProducer');
 const closeProducer = require('./closeProducer');
 const sendMessages = require('./sendMessages');
 const messageMetadata = require('./messageMetadata');
+const subscribe = require('./subscribe');
+const flow = require('./flow');
+const closeConsumer = require('./closeConsumer');
 const singleMessageMetadata = require('./singleMessageMetadata');
 
 module.exports = {
@@ -15,5 +18,8 @@ module.exports = {
   closeProducer,
   sendMessages,
   messageMetadata,
+  subscribe,
+  flow,
+  closeConsumer,
   singleMessageMetadata,
 };

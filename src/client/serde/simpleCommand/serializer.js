@@ -6,8 +6,8 @@ const buildSimpleCommand = ({ command }) => {
   const commandSizeBuffer = Buffer.alloc(common.bytes.COMMAND_SIZE);
   const totalSizeBuffer = Buffer.alloc(common.bytes.TOTAL_SIZE);
 
-  commandSizeBuffer.writeInt32BE(serializedBinary.length);
-  totalSizeBuffer.writeInt32BE(serializedBinary.length + commandSizeBuffer.length);
+  commandSizeBuffer.writeUInt32BE(serializedBinary.length);
+  totalSizeBuffer.writeUInt32BE(serializedBinary.length + commandSizeBuffer.length);
 
   return Buffer.concat([totalSizeBuffer, commandSizeBuffer, serializedBinary]);
 };
