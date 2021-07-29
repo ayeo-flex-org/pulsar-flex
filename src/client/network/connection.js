@@ -45,6 +45,8 @@ const connection = async ({ host, port }) => {
         responseMediator
       );
     },
+
+    close: () => socket.destroy(),
   };
 };
 
