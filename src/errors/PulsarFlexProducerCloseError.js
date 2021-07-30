@@ -1,5 +1,5 @@
 class PulsarFlexProducerCloseError extends Error {
-  constructor(message) {
+  constructor({ message }) {
     super();
     this.message = message;
     this.name = 'PulsarFlexProducerCloseError';

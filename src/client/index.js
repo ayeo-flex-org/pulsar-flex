@@ -47,12 +47,18 @@ class Client {
       jwt: this._jwt,
     });
 
-    services.pinger({
+    const cleanUpPinger = services.pinger({
       cnx: this._cnx,
       pingingIntervalMs: 60000,
       responseMediator: this._responseMediator,
     });
-    services.ponger({ cnx: this._cnx, responseMediator: this._responseMediator });
+    const cleanUpPonger = services.ponger({
+      cnx: this._cnx,
+      responseMediator: this._responseMediator,
+    });
+
+    this._cnx.addCleanUpListener(cleanUpPonger);
+    this._cnx.addCleanUpListener(cleanUpPinger);
   }
 
   getCnx() {
