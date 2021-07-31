@@ -1,5 +1,6 @@
 const pulsarApi = require('../../../commands/protocol/pulsar/pulsar_pb');
 const common = require('../common');
+const batch = require('./batch');
 
 // bytes:   4          4                     2            4         4
 // packet:  [totalSize][commandSize][command][magicNumber][checkSum][metadataSize][metadata][payload]...
@@ -48,19 +49,8 @@ const deserializer = (buffer) => {
 const deserializePayload = ({ metadata, buffer, isBatch }) => {
   let messages = [];
   if (isBatch) {
-    let index = 0;
-    for (let i = 0; i < metadata.numMessagesInBatch; ++i) {
-      const singleMetadataSize = buffer.readUInt32BE(index);
-      index += 4;
-      const singleMetadata = pulsarApi.SingleMessageMetadata.deserializeBinary(
-        buffer.slice(index, singleMetadataSize + index)
-      );
-      const objectSingleMetadata = singleMetadata.toObject();
-      index += singleMetadataSize;
-      const message = buffer.slice(index, objectSingleMetadata.payloadSize + index);
-      messages.push(message);
-      index += objectSingleMetadata.payloadSize;
-    }
+    //mutating
+    batch.deserializer({ metadata, buffer, messages });
   } else {
     messages.push(buffer);
   }

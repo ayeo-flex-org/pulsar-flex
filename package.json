@@ -4,18 +4,15 @@
   "description": "A package that natively supports pulsar api",
   "main": "src/index.js",
   "scripts": {
-    "test": "node test/test-client.js",
-    "start": "node src/index.js",
-    "setup": "docker-compose up",
-    "setup-jwt": "docker-compose -f docker-compose-jwt.yml up",
-    "get-jwt": "docker exec pulsar cat /pulsar/conf/admin-jwt.txt",
-    "interact": "docker exec -it pulsar /bin/bash",
-    "create": "docker exec pulsar ./bin/pulsar-admin topics create public/default/consumerron3",
-    "sub": "docker exec pulsar ./bin/pulsar-admin topics create-subscription -s subbon public/default/consumerron3",
-    "perf": "docker exec pulsar ./bin/pulsar-perf produce -r 1 -s 10 public/default/consumerron3"
+    "pretest": "npm run test-setup",
+    "test-setup": "node ./scripts/test-setup.js 2.8.0 20000",
+    "test": "mocha --recursive --exit test/",
+    "test-without-setup": "mocha --recursive --exit test/",
+    "interact": "scripts/docker exec -it pulsar /bin/bash"
   },
   "devDependencies": {
     "@types/google-protobuf": "^3.15.3",
+    "@types/mocha": "^9.0.0",
     "eslint": "^6.8.0",
     "eslint-config-prettier": "^6.0.0",
     "eslint-config-standard": "^13.0.1",
@@ -24,6 +21,7 @@
     "eslint-plugin-prettier": "^3.1.0",
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-standard": "^4.0.0",
+    "mocha": "^9.0.3",
     "prettier": "^2.3.2"
   },
   "repository": {

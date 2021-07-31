@@ -3,9 +3,6 @@ const resolver = require('../resolver');
 const serde = require('../serde');
 
 const sendRequest = (request, nonSerializedData, socket, responseMediator) => {
-  if (socket.readyState !== 'open') {
-    throw new Error('benZonaLamaAsitaEtZe');
-  }
   socket.write(request, 'binary');
 
   return responseMediator.response({ data: nonSerializedData });
