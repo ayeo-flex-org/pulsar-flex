@@ -2,7 +2,7 @@ const { Pulsar, Consumer } = require('../src');
 
 (async () => {
   const pulsar = new Pulsar({
-    discoveryServers: ['192.168.99.100:6650'],
+    discoveryServers: ['localhost:6650'],
     timeout: 1000,
   });
 
@@ -17,7 +17,7 @@ const { Pulsar, Consumer } = require('../src');
   await myConsumer.subscribe();
   myConsumer.run({
     onMessage: ({ ack, message, data }) => {
-      // console.log('process');
+      console.log(message);
     },
   });
 })();

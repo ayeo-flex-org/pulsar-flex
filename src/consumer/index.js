@@ -62,7 +62,7 @@ module.exports = class Consumer {
     return ACK_TYPES;
   }
 
-  async subscribe() {
+  subscribe = async () => {
     await this.client.connect({ topic: this.topic });
     await services.subscribe({
       topic: this.topic,
@@ -76,12 +76,8 @@ module.exports = class Consumer {
     });
   }
 
-  flow = async (flowSize) => {
-    const commandFlow = commands.flow({
-      consumerId: this.consumerId,
-      messagePermits: flowSize,
-    });
-    await this.client.getCnx().sendSimpleCommandRequest({ command: commandFlow }, this.noId);
+  _flow = async (flowAmount) => {
+    await services.flow({flowAmount, consumerId: this.consumerId, responseMediator: this.noId});
   };
 
   async unsubscribe() {}
@@ -106,7 +102,7 @@ module.exports = class Consumer {
       }
       if (--this.curFlow === 0) {
         this.curFlow = this.receiveQueueSize;
-        await this.flow(this.receiveQueueSize);
+        await this._flow(this.receiveQueueSize);
       }
       onMessage({
         message: data.payload.toString(),
@@ -120,6 +116,6 @@ module.exports = class Consumer {
       });
     });
 
-    await this.flow(this.receiveQueueSize);
+    await this._flow(this.receiveQueueSize);
   };
 };
