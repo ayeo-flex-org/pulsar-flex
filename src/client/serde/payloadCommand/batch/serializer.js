@@ -1,5 +1,5 @@
 const { CRC } = require('crc-full');
-const common = require('../common');
+const common = require('../../common');
 
 // bytes:   4          4                     2            4         4
 // packet:  [totalSize][commandSize][command][magicNumber][checkSum][metadataSize][metadata][payload]

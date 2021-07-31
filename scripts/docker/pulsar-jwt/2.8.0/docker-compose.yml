@@ -1,0 +1,22 @@
+version: '3.5'
+services:
+  pulsar-standalone-pulsar-flex:
+    container_name: pulsar-standalone-pulsar-flex
+    build: build
+    ports:
+      - '8080:8080'
+      - '6650:6650'
+    expose:
+      - 8080
+      - 6650
+    environment:
+      allowAutoTopicCreation: "false"
+      authenticationEnabled: "true"
+      authenticationProviders: "org.apache.pulsar.broker.authentication.AuthenticationProviderToken"
+      authorizationEnabled: "true"
+      brokerClientAuthenticationPlugin: "org.apache.pulsar.client.impl.auth.AuthenticationToken"
+      brokerClientTlsEnabled: "false"
+      brokerClientAuthenticationParameters: "file:///pulsar/conf/admin-jwt.txt"
+      tokenSecretKey: "file:///pulsar/conf/admin-token.secret"
+      superUserRoles: "admin"
+      PULSAR_MEM: " -Xms128m -Xmx128m -XX:MaxDirectMemorySize=128m"
