@@ -52,7 +52,7 @@ module.exports = class Consumer {
     });
 
     this.isSubscribed = false;
-    this.reflow = async (data) => {
+    this._reflow = async (data) => {
       this.receiveQueue.push(data);
       const nextFlow = Math.ceil(this.receiveQueueSize / 2);
       if (--this.curFlow <= nextFlow) {
@@ -97,7 +97,7 @@ module.exports = class Consumer {
       requestId: this.requestId++,
       responseMediator: this.requestIdMediator,
     });
-    this.client.getResponseEvents().off('message', reflow);
+    this.client.getResponseEvents().off('message', this._reflow);
     this.isSubscribed = false;
   }
 
@@ -115,7 +115,7 @@ module.exports = class Consumer {
   run = async ({ onMessage = null, autoAck = true }) => {
     if(this.isSubscribed) {
       
-      this.client.getResponseEvents().on('message', reflow);
+      this.client.getResponseEvents().on('message', this._reflow);
   
       const process = async () => {
         if(!this.isSubscribed) return;

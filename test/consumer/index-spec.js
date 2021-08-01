@@ -19,6 +19,8 @@ describe('Consumer tests', function () {
   beforeEach(() => {
     console.log('Clearing Backlog...');
     utils.clearBacklog();
+  })
+  this.afterEach(() => {
     cons.unsubscribe();
   })
   describe('Consume Messages', function () {
@@ -30,14 +32,11 @@ describe('Consumer tests', function () {
         let messages = [];
         
         await utils.produceMsgs({messages: expectedMessages});
-
         await new Promise((resolve, reject) => {
             cons.run({
                 onMessage: ({ ack, message, data }) => {
                     messages.push(message);
-                    console.log(message);
                     if(messages.length >= expectedMessages.length) {
-                        console.log(messages);
                         resolve()
                     };
                 },
@@ -55,27 +54,29 @@ describe('Consumer tests', function () {
         this.timeout(30000)
         await cons.subscribe();
         const firstMessage = 'hello';
-        utils.produceMsgs([firstMessage])
+        await utils.produceMsgs({messages: [firstMessage]})
         await new Promise((resolve, reject) => {
           cons.run({
               onMessage: ({ ack, message, data }) => {
-                  console.log(message);
                   resolve();
               },
           })
         })
         await cons.unsubscribe();
         const secondMessage = 'goodbye'
-        utils.produceMsgs([secondMessage])
+        await utils.produceMsgs({messages: [secondMessage]})
+        let actualSecondMessage;
         await cons.subscribe();
         await new Promise((resolve, reject) => {
           cons.run({
               onMessage: ({ ack, message, data }) => {
-                  console.log(message);
+                  actualSecondMessage = message;
                   resolve();
               },
           })
         })
+        await cons.unsubscribe();
+        assert.notEqual(actualSecondMessage, firstMessage);
       });
     });
   });
