@@ -20,7 +20,7 @@ const buildPayloadCommand = ({ command, metadataCommand, payload }) => {
 
   const payloadBuffer = Buffer.from(payload);
 
-  checkSumBuffer.writeUInt32BE(
+  checkSumBuffer.writeInt32BE(
     crc.compute(Buffer.concat([metadataSizeBuffer, metadataBinary, payloadBuffer]))
   );
   totalSizeBuffer.writeUInt32BE(

@@ -1,7 +1,7 @@
 const { exec } = require('child_process');
 const { promisify } = require('util');
-const path = require('path');
 const asyncExec = promisify(exec);
+const path = require('path');
 
 const [nodeExePath, executedFilePath, version, standaloneWaitTime] = process.argv;
 
@@ -11,7 +11,8 @@ console.log(`Setting up environment using JWT and pulsar standalone version ${ve
   try {
     await asyncExec('docker --help');
   } catch (e) {
-    console.log('docker must be installed on the running host');
+    console.log('Docker must be installed on the running host');
+    process.exit(1);
   }
 
   const containerName = 'pulsar-standalone-pulsar-flex';
