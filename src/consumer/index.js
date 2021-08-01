@@ -104,14 +104,14 @@ module.exports = class Consumer {
   };
 
   run = async ({ onMessage = null, autoAck = true }) => {
-    if(!this.isSubscribed) {
+    if(this.isSubscribed) {
       this.client.getResponseEvents().on('message', async (data) => {
         this.receiveQueue.push(data);
-        if (--this.curFlow === 0) {
-          this.curFlow = this.receiveQueueSize;
-          await this._flow(this.receiveQueueSize);
+        const nextFlow = Math.ceil(this.receiveQueueSize / 2);
+        if (--this.curFlow <= nextFlow) {
+          this.curFlow += nextFlow;
+          await this._flow(nextFlow);
         }
-        
       });
   
       const process = async () => {
