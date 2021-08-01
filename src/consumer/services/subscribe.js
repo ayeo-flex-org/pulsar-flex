@@ -3,6 +3,7 @@ const errors = require('../../errors');
 const utils = require('../../utils');
 
 const subscribe = async ({
+  cnx,
   topic,
   subscription,
   subType,
@@ -21,9 +22,10 @@ const subscribe = async ({
     readCompacted,
     requestId,
   });
-  const { command } = await this.client
-    .getCnx()
-    .sendSimpleCommandRequest({ command: subscribeCommand }, responseMediator);
+  const { command } = await cnx.sendSimpleCommandRequest(
+    { command: subscribeCommand },
+    responseMediator
+  );
   if (!utils.isNil(command.error)) throw new errors.PulsarFlexSubscribeError(command.message);
   return { command };
 };

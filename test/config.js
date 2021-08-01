@@ -3,6 +3,7 @@ const config = {
   discoveryServers: ['localhost:6650'],
   topic: 'persistent://public/default/test',
   subscription: 'subscription',
+  containerName: 'pulsar-standalone-pulsar-flex',
 };
 
 module.exports = config;
