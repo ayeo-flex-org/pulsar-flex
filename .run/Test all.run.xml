@@ -6,7 +6,7 @@
     <working-directory>$PROJECT_DIR$</working-directory>
     <pass-parent-env>true</pass-parent-env>
     <ui>bdd</ui>
-    <extra-mocha-options>--exit</extra-mocha-options>
+    <extra-mocha-options>--exit --timeout 20000</extra-mocha-options>
     <test-kind>DIRECTORY</test-kind>
     <test-directory>$PROJECT_DIR$/test</test-directory>
     <recursive>true</recursive>
@@ -29,7 +29,7 @@
     <working-directory>$PROJECT_DIR$</working-directory>
     <pass-parent-env>true</pass-parent-env>
     <ui>bdd</ui>
-    <extra-mocha-options>--exit</extra-mocha-options>
+    <extra-mocha-options>--exit --timeout</extra-mocha-options>
     <test-kind>DIRECTORY</test-kind>
     <test-directory>$PROJECT_DIR$/test</test-directory>
     <recursive>true</recursive>
