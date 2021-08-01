@@ -9,10 +9,6 @@ describe('Consumer test', function () {
   describe('Consume Messages', function () {
     it('should not throw exception', async function () {
       this.timeout(30000);
-    //   const pulsar = new Pulsar({
-    //     discoveryServers,
-    //     jwt,
-    //   });
       const cons = new Consumer({
         discoveryServers,
         jwt,
