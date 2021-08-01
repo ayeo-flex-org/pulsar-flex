@@ -1,5 +1,8 @@
 const commands = require('../commands');
 const responseMediators = require('../responseMediators');
+const services = require('./services');
+const Pulsar = require('../client');
+
 const SUB_TYPES = {
   EXCLUSIVE: 0,
   SHARED: 1,
@@ -14,7 +17,8 @@ const ACK_TYPES = {
 
 module.exports = class Consumer {
   constructor({
-    client,
+    discoveryServers,
+    jwt,
     topic,
     subscription,
     subType,
@@ -22,7 +26,10 @@ module.exports = class Consumer {
     readCompacted = false,
     receiveQueueSize = 500,
   }) {
-    this.client = client;
+    this.client = new Pulsar({
+      discoveryServers,
+      jwt,
+    });
     this.topic = topic;
     this.subscription = subscription;
     this.subType = subType;
@@ -35,17 +42,17 @@ module.exports = class Consumer {
 
     this.receiveQueue = [];
 
-    this.subscribeResponseMediator = new responseMediators.RequestIdResponseMediator({
-      client,
+    this.subscribeUnsubscribeResponseMediator = new responseMediators.RequestIdResponseMediator({
+      client: this.client,
       commands: ['success', 'error'],
     });
     this.noId = new responseMediators.NoIdResponseMediator({
-      client,
+      client: this.client,
       commands: ['message'],
     });
 
     this.ackResponse = new responseMediators.RequestIdResponseMediator({
-      client,
+      client: this.client,
       commands: ['ackresponse'],
     });
 
@@ -60,11 +67,10 @@ module.exports = class Consumer {
     return ACK_TYPES;
   }
 
-  async subscribe() {
+  subscribe = async () => {
     await this.client.connect({ topic: this.topic });
-
-    // naming validations
-    const subscribeCommand = commands.subscribe({
+    await services.subscribe({
+      cnx: this.client.getCnx(),
       topic: this.topic,
       subscription: this.subscription,
       subType: this.subType,
@@ -72,22 +78,22 @@ module.exports = class Consumer {
       consumerName: this.consumerName,
       readCompacted: this.readCompacted,
       requestId: this.requestId++,
+      responseMediator: this.subscribeUnsubscribeResponseMediator,
     });
-    const a = await this.client
-      .getCnx()
-      .sendSimpleCommandRequest({ command: subscribeCommand }, this.subscribeResponseMediator);
-    console.log(a);
   }
 
-  flow = async (flowSize) => {
-    const commandFlow = commands.flow({
-      consumerId: this.consumerId,
-      messagePermits: flowSize,
-    });
-    await this.client.getCnx().sendSimpleCommandRequest({ command: commandFlow }, this.noId);
+  _flow = async (flowAmount) => {
+    await services.flow({cnx: this.client.getCnx(), flowAmount, consumerId: this.consumerId, responseMediator: this.noId});
   };
 
-  async unsubscribe() {}
+  unsubscribe = async () => {
+    await services.unsubscribe({
+      cnx: this.client.getCnx(),
+      consumerId: this.consumerId,
+      requestId: this.requestId++,
+      responseMediator: this.subscribeUnsubscribeResponseMediator,
+    });
+  }
 
   _ack = async ({ messageIdData, ackType }) => {
     const commandAck = commands.ack({
@@ -102,14 +108,8 @@ module.exports = class Consumer {
   run = async ({ onMessage = null, autoAck = true }) => {
     this.client.getResponseEvents().on('message', async (data) => {
       this.receiveQueue.push(data);
-      // console.log(this.receiveQueue);
-      console.log(data.payload.toString());
       if (autoAck) {
         await this._ack({ messageIdData: data.command.messageId, ackType: ACK_TYPES.INDIVIDUAL });
-      }
-      if (--this.curFlow === 0) {
-        this.curFlow = this.receiveQueueSize;
-        await this.flow(this.receiveQueueSize);
       }
       onMessage({
         message: data.payload.toString(),
@@ -121,8 +121,13 @@ module.exports = class Consumer {
             ackType: specifiedAckType ? specifiedAckType : ACK_TYPES.INDIVIDUAL,
           }),
       });
+      if (--this.curFlow === 0) {
+        this.curFlow = this.receiveQueueSize;
+        await this._flow(this.receiveQueueSize);
+      }
+      
     });
 
-    await this.flow(this.receiveQueueSize);
+    await this._flow(this.receiveQueueSize);
   };
 };

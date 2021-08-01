@@ -11,6 +11,7 @@ const closeConsumer = require('./closeConsumer');
 const singleMessageMetadata = require('./singleMessageMetadata');
 const ack = require('./ack');
 const lookup = require('./lookup');
+const unsubscribe = require('./closeConsumer');
 
 module.exports = {
   connect,
@@ -21,9 +22,10 @@ module.exports = {
   sendMessages,
   messageMetadata,
   subscribe,
+  unsubscribe,
   flow,
   closeConsumer,
   singleMessageMetadata,
   ack,
-  lookup
+  lookup,
 };

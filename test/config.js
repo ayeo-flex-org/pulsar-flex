@@ -9,6 +9,7 @@ const config = {
   ]),
   commandMessageBuffer: Buffer.from([]),
   commandBatchMessageBuffer: Buffer.from([]),
+  containerName: 'pulsar-standalone-pulsar-flex',
 };
 
 module.exports = config;

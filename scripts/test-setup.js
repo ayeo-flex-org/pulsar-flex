@@ -1,7 +1,7 @@
 const { exec } = require('child_process');
 const { promisify } = require('util');
-const path = require('path');
 const asyncExec = promisify(exec);
+const path = require('path');
 
 const [nodeExePath, executedFilePath, version, standaloneWaitTime] = process.argv;
 
