@@ -52,6 +52,14 @@ module.exports = class Consumer {
     });
 
     this.isSubscribed = false;
+    this.reflow = async (data) => {
+      this.receiveQueue.push(data);
+      const nextFlow = Math.ceil(this.receiveQueueSize / 2);
+      if (--this.curFlow <= nextFlow) {
+        this.curFlow += nextFlow;
+        await this._flow(nextFlow);
+      } 
+    }
   }
 
   static get SUB_TYPES() {
@@ -89,6 +97,7 @@ module.exports = class Consumer {
       requestId: this.requestId++,
       responseMediator: this.requestIdMediator,
     });
+    this.client.getResponseEvents().off('message', reflow);
     this.isSubscribed = false;
   }
 
@@ -105,16 +114,11 @@ module.exports = class Consumer {
 
   run = async ({ onMessage = null, autoAck = true }) => {
     if(this.isSubscribed) {
-      this.client.getResponseEvents().on('message', async (data) => {
-        this.receiveQueue.push(data);
-        const nextFlow = Math.ceil(this.receiveQueueSize / 2);
-        if (--this.curFlow <= nextFlow) {
-          this.curFlow += nextFlow;
-          await this._flow(nextFlow);
-        }
-      });
+      
+      this.client.getResponseEvents().on('message', reflow);
   
       const process = async () => {
+        if(!this.isSubscribed) return;
         const message = this.receiveQueue.shift();
         if (autoAck) {
           await this._ack({ messageIdData: message.command.messageId, ackType: ACK_TYPES.INDIVIDUAL });

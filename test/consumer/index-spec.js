@@ -1,4 +1,4 @@
-const { Pulsar, Consumer } = require('../../src');
+const { Consumer } = require('../../src');
 const config = require('../config');
 const assert = require('assert');
 const utils = require('../utils');
@@ -6,10 +6,6 @@ const utils = require('../utils');
 const { jwt, discoveryServers, topic , containerName} = config;
 
 describe('Consumer tests', function () {
-  afterEach(() => {
-    console.log('Clearing Backlog...');
-    utils.clearBacklog();
-  })
   const cons = new Consumer({
     discoveryServers,
     jwt,
@@ -19,6 +15,11 @@ describe('Consumer tests', function () {
     consumerName: 'Consy',
     readCompacted: false,
     receiveQueueSize: 1000,
+  })
+  beforeEach(() => {
+    console.log('Clearing Backlog...');
+    utils.clearBacklog();
+    cons.unsubscribe();
   })
   describe('Consume Messages', function () {
     it('should not throw exception', async function () {
@@ -42,19 +43,39 @@ describe('Consumer tests', function () {
                 },
             })
         })
-        await cons.unsubscribe();
         assert.deepEqual(messages, expectedMessages);
         
     } catch (e) {
-        await cons.unsubscribe();
         console.log(e);
         assert.ok(false);
       }
     });
-    describe('Manual Ack', function() {
+    describe('Automatic Ack', function() {
       it('Should not re-read the message', async function() {
+        this.timeout(30000)
         await cons.subscribe();
-
+        const firstMessage = 'hello';
+        utils.produceMsgs([firstMessage])
+        await new Promise((resolve, reject) => {
+          cons.run({
+              onMessage: ({ ack, message, data }) => {
+                  console.log(message);
+                  resolve();
+              },
+          })
+        })
+        await cons.unsubscribe();
+        const secondMessage = 'goodbye'
+        utils.produceMsgs([secondMessage])
+        await cons.subscribe();
+        await new Promise((resolve, reject) => {
+          cons.run({
+              onMessage: ({ ack, message, data }) => {
+                  console.log(message);
+                  resolve();
+              },
+          })
+        })
       });
     });
   });
