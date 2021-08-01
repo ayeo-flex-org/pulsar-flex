@@ -14,25 +14,26 @@ const lookup = async ({
   connectorServiceResponseMediator,
 }) => {
   try {
+    console.log('1');
     const [serviceHost, servicePort] = discoveryServers[index].split(':');
-
+    console.log('2');
     const lookupCommand = commands.lookup({ topic, requestId });
-
+    console.log('3');
     const discoveryCnx = await connection({ host: serviceHost, port: servicePort });
-
+    console.log('4');
     await connectorService({
       cnx: discoveryCnx,
       jwt,
       responseMediator: connectorServiceResponseMediator,
     });
-
+    console.log('5');
     const { command } = await discoveryCnx.sendSimpleCommandRequest(
       { command: lookupCommand },
       responseMediator
     );
-
+    console.log('6');
     discoveryCnx.close();
-
+    console.log('7');
     if (command.error) throw new errors.PulsarFlexTopicLookupError({ message: command.message });
     const [protocolName, hostPort] = command.brokerserviceurl.split('://');
     const [host, port] = hostPort.split(':');
@@ -44,21 +45,22 @@ const lookup = async ({
     console.warn('Could not connect', e);
     if (index >= discoveryServers.length - 1) {
       return new Promise((resolve, reject) =>
-        setTimeout(() =>
-          resolve(
-            lookup({
-              discoveryServers,
-              responseMediator,
-              topic,
-              jwt,
-              requestId,
-              connectorService,
-              reconnectionTimeMs,
-              connectorServiceResponseMediator,
-              index: 0,
-            }),
-            reconnectionTimeMs
-          )
+        setTimeout(
+          () =>
+            resolve(
+              lookup({
+                discoveryServers,
+                responseMediator,
+                topic,
+                jwt,
+                requestId,
+                connectorService,
+                reconnectionTimeMs,
+                connectorServiceResponseMediator,
+                index: 0,
+              })
+            ),
+          reconnectionTimeMs
         )
       );
     }

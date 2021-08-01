@@ -5,7 +5,7 @@
   "main": "src/index.js",
   "scripts": {
     "pretest": "npm run test-setup",
-    "test-setup": "node ./scripts/test-setup.js 2.8.0 20000",
+    "test-setup": "node ./scripts/test-setup.js 2.8.0 50000",
     "test": "mocha --recursive --exit test/",
     "test-without-setup": "mocha --recursive --exit test/",
     "interact": "scripts/docker exec -it pulsar /bin/bash"

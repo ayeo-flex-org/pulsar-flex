@@ -4,11 +4,11 @@ const sendBatch = async ({
   producerName,
   sequenceId,
   producerId,
-  cnx,
+  client,
   responseMediator,
   messages,
 }) => {
-  const { sendPayloadBatchCommandRequest } = cnx;
+  const { sendPayloadBatchCommandRequest } = client.getCnx();
   const numMessages = messages.length;
   const messageMetadata = commands.messageMetadata({
     producerName,

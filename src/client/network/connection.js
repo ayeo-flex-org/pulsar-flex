@@ -3,9 +3,17 @@ const resolver = require('../resolver');
 const serde = require('../serde');
 
 const sendRequest = (request, nonSerializedData, socket, responseMediator) => {
+  console.log('f');
+  console.log(socket.readyState);
+  console.log(nonSerializedData);
+  if (socket.readyState !== 'open') throw new Error('fuckkk');
+  console.log('u');
   socket.write(request, 'binary');
+  console.log('ck');
 
-  return responseMediator.response({ data: nonSerializedData });
+  const idk = responseMediator.response({ data: nonSerializedData });
+  console.log(idk);
+  return idk;
 };
 
 const connection = async ({ host, port }) => {
