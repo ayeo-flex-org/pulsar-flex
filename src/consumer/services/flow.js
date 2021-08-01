@@ -7,7 +7,11 @@ const flow = async ({ cnx, flowAmount, consumerId, responseMediator }) => {
     consumerId,
     messagePermits: flowAmount,
   });
-  await cnx.sendSimpleCommandRequest({ command: commandFlow }, responseMediator);
+  const { command } = await cnx.sendSimpleCommandRequest(
+    { command: commandFlow },
+    responseMediator
+  );
+  if (!utils.isNil(command.error)) throw new errors.PulsarFlexFlowError(command.message);
 };
 
 module.exports = flow;

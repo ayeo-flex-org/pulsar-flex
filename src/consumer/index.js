@@ -1,7 +1,7 @@
-const commands = require('../commands');
 const responseMediators = require('../responseMediators');
 const services = require('./services');
 const Pulsar = require('../client');
+const { PulsarFlexNotSubscribedError } = require('../errors');
 
 const SUB_TYPES = {
   EXCLUSIVE: 0,
@@ -42,18 +42,13 @@ module.exports = class Consumer {
 
     this.receiveQueue = [];
 
-    this.subscribeUnsubscribeResponseMediator = new responseMediators.RequestIdResponseMediator({
+    this.requestIdMediator = new responseMediators.RequestIdResponseMediator({
       client: this.client,
-      commands: ['success', 'error'],
+      commands: ['success', 'error', 'ackresponse'],
     });
     this.noId = new responseMediators.NoIdResponseMediator({
       client: this.client,
       commands: ['message'],
-    });
-
-    this.ackResponse = new responseMediators.RequestIdResponseMediator({
-      client: this.client,
-      commands: ['ackresponse'],
     });
 
     this.isSubscribed = false;
@@ -78,8 +73,9 @@ module.exports = class Consumer {
       consumerName: this.consumerName,
       readCompacted: this.readCompacted,
       requestId: this.requestId++,
-      responseMediator: this.subscribeUnsubscribeResponseMediator,
+      responseMediator: this.requestIdMediator,
     });
+    this.isSubscribed = true;
   }
 
   _flow = async (flowAmount) => {
@@ -91,43 +87,59 @@ module.exports = class Consumer {
       cnx: this.client.getCnx(),
       consumerId: this.consumerId,
       requestId: this.requestId++,
-      responseMediator: this.subscribeUnsubscribeResponseMediator,
+      responseMediator: this.requestIdMediator,
     });
+    this.isSubscribed = false;
   }
 
   _ack = async ({ messageIdData, ackType }) => {
-    const commandAck = commands.ack({
+    await services.ack({
+      cnx: this.client.getCnx(),
       consumerId: this.consumerId,
       messageIdData,
       ackType,
       requestId: this.requestId++,
-    });
-    await this.client.getCnx().sendSimpleCommandRequest({ command: commandAck }, this.ackResponse);
+      responseMediator: this.requestIdMediator,
+    })
   };
 
   run = async ({ onMessage = null, autoAck = true }) => {
-    this.client.getResponseEvents().on('message', async (data) => {
-      this.receiveQueue.push(data);
-      if (autoAck) {
-        await this._ack({ messageIdData: data.command.messageId, ackType: ACK_TYPES.INDIVIDUAL });
-      }
-      onMessage({
-        message: data.payload.toString(),
-        metadata: data.metadata,
-        command: data.command,
-        ack: (specifiedAckType) =>
-          this._ack({
-            messageIdData: data.command.messageId,
-            ackType: specifiedAckType ? specifiedAckType : ACK_TYPES.INDIVIDUAL,
-          }),
+    if(!this.isSubscribed) {
+      this.client.getResponseEvents().on('message', async (data) => {
+        this.receiveQueue.push(data);
+        if (--this.curFlow === 0) {
+          this.curFlow = this.receiveQueueSize;
+          await this._flow(this.receiveQueueSize);
+        }
+        
       });
-      if (--this.curFlow === 0) {
-        this.curFlow = this.receiveQueueSize;
-        await this._flow(this.receiveQueueSize);
+  
+      const process = async () => {
+        const message = this.receiveQueue.shift();
+        if (autoAck) {
+          await this._ack({ messageIdData: message.command.messageId, ackType: ACK_TYPES.INDIVIDUAL });
+        }
+        onMessage({
+          message: message.payload.toString(),
+          metadata: message.metadata,
+          command: message.command,
+          ack: (specifiedAckType) =>
+            this._ack({
+              messageIdData: message.command.messageId,
+              ackType: specifiedAckType ? specifiedAckType : ACK_TYPES.INDIVIDUAL,
+            }),
+        });
+        if(this.receiveQueue.length > 0) 
+          process();
+        else
+          setTimeout(process, 1000);
       }
-      
-    });
 
-    await this._flow(this.receiveQueueSize);
+      await this._flow(this.receiveQueueSize);
+      process();
+    }
+    else {
+      throw PulsarFlexNotSubscribedError('You must be subscribed to the topic in order to start consuming messages.');
+    }
   };
 };
