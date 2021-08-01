@@ -4,9 +4,9 @@ const services = require('./services');
 const responsesMediator = require('../responseMediators');
 
 class Client {
-  constructor({ discoveryServers, timeout, jwt }) {
+  constructor({ discoveryServers, circularReconnectionMs = 10000, jwt }) {
     this._discoveryServers = discoveryServers;
-    this._timeout = timeout;
+    this._circularReconnectionMs = circularReconnectionMs;
     this._requestId = 0;
     this._jwt = jwt;
     this._cnx = null;
@@ -37,6 +37,7 @@ class Client {
       requestId: ++this._requestId,
       connectorService: services.connector,
       connectorServiceResponseMediator: this._responseMediator,
+      reconnectionTimeMs: this._circularReconnectionMs,
     });
 
     this._cnx = await connection({ host, port });

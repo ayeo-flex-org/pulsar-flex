@@ -9,7 +9,7 @@ const lookup = async ({
   topic,
   requestId,
   index = 0,
-  reconnectionTimeMs = 10000,
+  reconnectionTimeMs,
   connectorService,
   connectorServiceResponseMediator,
 }) => {
@@ -44,21 +44,22 @@ const lookup = async ({
     console.warn('Could not connect', e);
     if (index >= discoveryServers.length - 1) {
       return new Promise((resolve, reject) =>
-        setTimeout(() =>
-          resolve(
-            lookup({
-              discoveryServers,
-              responseMediator,
-              topic,
-              jwt,
-              requestId,
-              connectorService,
-              reconnectionTimeMs,
-              connectorServiceResponseMediator,
-              index: 0,
-            }),
-            reconnectionTimeMs
-          )
+        setTimeout(
+          () =>
+            resolve(
+              lookup({
+                discoveryServers,
+                responseMediator,
+                topic,
+                jwt,
+                requestId,
+                connectorService,
+                reconnectionTimeMs,
+                connectorServiceResponseMediator,
+                index: 0,
+              })
+            ),
+          reconnectionTimeMs
         )
       );
     }
