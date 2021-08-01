@@ -28,8 +28,8 @@ describe('Consumer tests', function () {
         let expectedMessages = ['hello', 'world', 'goodbye'];
         let messages = [];
         
-        utils.produceMsgs(expectedMessages);
-        
+        await utils.produceMsgs({messages: expectedMessages});
+
         await new Promise((resolve, reject) => {
             cons.run({
                 onMessage: ({ ack, message, data }) => {
