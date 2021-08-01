@@ -3,7 +3,7 @@ const emitter = require('../emitter');
 
 const isSimpleCommand = (buffer) => {
   const totalSize = buffer.readInt32BE();
-  const commandSize = buffer.readInt32BE(4);
+  const commandSize = buffer.readUInt32BE(4);
 
   return totalSize - commandSize === 4;
 };
@@ -34,7 +34,7 @@ const data = (buffer) => {
 
     const slicedBuffer = buffer.slice(currentBufferIndex, currentBufferIndex + expectedFrameSize);
 
-    if (isSimpleCommand(buffer)) {
+    if (isSimpleCommand(slicedBuffer)) {
       const { type, command } = serde.simpleCommand.deserializer(slicedBuffer);
       emitter.data.emit(type, { command });
     } else {
