@@ -10,6 +10,7 @@ const PulsarFlexUnsubscribeError = require('./PulsarFlexUnsubscribeError');
 const PulsarFlexFlowError = require('./PulsarFlexFlowError');
 const PulsarFlexAckError = require('./PulsarFlexAckError');
 const PulsarFlexNotSubscribedError = require('./PulsarFlexUnsubscribeError');
+const PulsarFlexProducerSendError = require('./PulsarFlexProducerSendError');
 
 module.exports = {
   PulsarFlexBrokerTimeoutError,
@@ -24,4 +25,5 @@ module.exports = {
   PulsarFlexFlowError,
   PulsarFlexAckError,
   PulsarFlexNotSubscribedError,
+  PulsarFlexProducerSendError,
 };

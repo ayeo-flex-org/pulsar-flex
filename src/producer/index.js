@@ -36,14 +36,16 @@ class Producer {
     });
   }
 
-  _setConnected = (connected) => (this._connected = connected);
-
   create = async () => {
+    if (this._connected)
+      throw new errors.PulsarFlexProducerCreationError({
+        message: 'Already connected, please close before trying again',
+      });
     await this._client.connect({ topic: this._topic });
-    this._setConnected(true);
-    await this._client
-      .getCnx()
-      .addCleanUpListener(async () => await services.reconnect(this.create, this._setConnected));
+    await this._client.getCnx().addCleanUpListener(() => {
+      this._connected = false;
+      services.reconnect(this.create).then(() => (this._connected = true));
+    });
     const { command } = await services.create({
       topic: this._topic,
       requestId: this._requestId,
@@ -53,6 +55,7 @@ class Producer {
       responseMediator: this._createCloseResponseMediator,
       producerAccessMode: this._producerAccessMode,
     });
+    this._connected = true;
     const { producerName, lastSequenceId } = command;
     this._requestId++;
     this._producerName = producerName;
@@ -62,6 +65,7 @@ class Producer {
 
   close = async () => {
     await services.close({
+      connected: this._connected,
       producerId: this._producerId,
       client: this._client,
       requestId: this._requestId,
@@ -72,6 +76,10 @@ class Producer {
   };
 
   sendMessage = async ({ payload, properties }) => {
+    if (!this._connected)
+      throw new errors.PulsarFlexProducerSendError({
+        message: 'Cannot send messages over not connected producer',
+      });
     if (utils.isNil(payload)) throw new errors.PulsarFlexNoPayloadError();
     try {
       await services.sendMessage({
@@ -95,6 +103,10 @@ class Producer {
   };
 
   sendBatch = async ({ messages }) => {
+    if (!this._connected)
+      throw new errors.PulsarFlexProducerSendError({
+        message: 'Cannot send messages over not connected producer',
+      });
     try {
       await services.sendBatch({
         producerId: this._producerId,

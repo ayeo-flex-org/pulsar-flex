@@ -2,7 +2,12 @@ const commands = require('../../commands');
 const utils = require('../../utils');
 const errors = require('../../errors');
 
-const close = async ({ producerId, client, requestId, responseMediator }) => {
+const close = async ({ producerId, client, connected, requestId, responseMediator }) => {
+  if (!connected)
+    throw new errors.PulsarFlexProducerCloseError({
+      message: 'Cannot close not connected producer',
+    });
+
   const { sendSimpleCommandRequest } = client.getCnx();
   const closeProducer = commands.closeProducer({ producerId, requestId });
   const { command } = await sendSimpleCommandRequest({ command: closeProducer }, responseMediator);
