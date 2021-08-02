@@ -6,12 +6,12 @@ const create = async ({
   topic,
   requestId,
   producerId,
-  cnx,
+  client,
   responseMediator,
   producerConfiguration,
   producerName,
 }) => {
-  const { sendSimpleCommandRequest } = cnx;
+  const { sendSimpleCommandRequest } = client.getCnx();
   const createProducer = commands.createProducer({
     topic,
     requestId,

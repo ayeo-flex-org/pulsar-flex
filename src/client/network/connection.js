@@ -2,10 +2,9 @@ const createSocket = require('./socket/socket');
 const resolver = require('../resolver');
 const serde = require('../serde');
 
-const sendRequest = (request, nonSerializedData, socket, responseMediator) => {
+const sendRequest = (request, nonSerializedData, socket, responseMediator, autoResolve) => {
   socket.write(request, 'binary');
-
-  return responseMediator.response({ data: nonSerializedData });
+  return responseMediator.response({ data: nonSerializedData, autoResolve });
 };
 
 const connection = async ({ host, port }) => {
@@ -13,33 +12,36 @@ const connection = async ({ host, port }) => {
     host,
     port,
     onData: resolver.data,
-    onError: (e) => console.log(e),
+    onError: (e) => console.error(e),
   });
   return {
-    sendSimpleCommandRequest: (dataToSerialize, responseMediator) => {
+    sendSimpleCommandRequest: (dataToSerialize, responseMediator, autoResolve = false) => {
       return sendRequest(
         serde.simpleCommand.serializer(dataToSerialize),
         dataToSerialize,
         socket,
-        responseMediator
+        responseMediator,
+        autoResolve
       );
     },
 
-    sendPayloadCommandRequest: (dataToSerialize, responseMediator) => {
+    sendPayloadCommandRequest: (dataToSerialize, responseMediator, autoResolve = false) => {
       return sendRequest(
         serde.payloadCommand.serializer(dataToSerialize),
         dataToSerialize,
         socket,
-        responseMediator
+        responseMediator,
+        autoResolve
       );
     },
 
-    sendPayloadBatchCommandRequest: (dataToSerialize, responseMediator) => {
+    sendPayloadBatchCommandRequest: (dataToSerialize, responseMediator, autoResolve = false) => {
       return sendRequest(
         serde.payloadBatchCommand.serializer(dataToSerialize),
         dataToSerialize,
         socket,
-        responseMediator
+        responseMediator,
+        autoResolve
       );
     },
 
