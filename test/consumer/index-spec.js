@@ -16,12 +16,14 @@ describe('Consumer tests', function () {
     readCompacted: false,
     receiveQueueSize: 1000,
   })
-  beforeEach(() => {
+  beforeEach(async () => {
+    this.timeout(5000)
     console.log('Clearing Backlog...');
-    utils.clearBacklog();
+    await utils.clearBacklog();
   })
-  this.afterEach(() => {
-    cons.unsubscribe();
+  this.afterEach(async () => {
+    if(cons.isSubscribed)
+      await cons.unsubscribe();
   })
   describe('Consume Messages', function () {
     it('should not throw exception', async function () {
@@ -53,31 +55,62 @@ describe('Consumer tests', function () {
       it('Should not re-read the message', async function() {
         this.timeout(30000)
         await cons.subscribe();
-        const firstMessage = 'hello';
-        await utils.produceMsgs({messages: [firstMessage]})
+        let firstMessage;
+        await utils.produceMsgs({messages: ['hello']})
         await new Promise((resolve, reject) => {
           cons.run({
               onMessage: ({ ack, message, data }) => {
+                  firstMessage = message;
                   resolve();
               },
           })
         })
         await cons.unsubscribe();
-        const secondMessage = 'goodbye'
-        await utils.produceMsgs({messages: [secondMessage]})
-        let actualSecondMessage;
+        await utils.produceMsgs({messages: ['goodbye']})
+        let secondMessage;
         await cons.subscribe();
         await new Promise((resolve, reject) => {
           cons.run({
               onMessage: ({ ack, message, data }) => {
-                  actualSecondMessage = message;
-                  resolve();
+                secondMessage = message;
+                resolve();
               },
           })
         })
         await cons.unsubscribe();
-        assert.notEqual(actualSecondMessage, firstMessage);
+        assert.notEqual(secondMessage, firstMessage);
       });
+    });
+    describe('Manual Ack', function() {
+      it('Should re-read message when auto ack is off', async function() {
+        this.timeout(30000);
+        await cons.subscribe();
+        let firstMessage;
+        await utils.produceMsgs({messages: ['hello']})
+        await new Promise((resolve, reject) => {
+          cons.run({
+              onMessage: ({ ack, message, data }) => {
+                firstMessage = message;
+                resolve();
+              },
+              autoAck: false,
+          })
+        })
+        await cons.unsubscribe();
+        await cons.subscribe();
+        let secondMessage;
+        await new Promise((resolve, reject) => {
+          cons.run({
+              onMessage: ({ ack, message, data }) => {
+                secondMessage = message;
+                resolve();
+              },
+              autoAck: false,
+          })
+        })
+        await cons.unsubscribe();
+        assert.equal(firstMessage, secondMessage);
+      })
     });
   });
 });

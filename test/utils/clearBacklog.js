@@ -5,7 +5,7 @@ const { containerName, topic, subscription } = config;
 
 const clearBacklog = async () => {
   await asyncExec(
-    `docker ${containerName} exec /pulsar/bin/pulsar-admin topics clear-backlog -s ${subscription} ${topic}`
+    `docker exec ${containerName} /pulsar/bin/pulsar-admin topics clear-backlog -s ${subscription} ${topic}`
   );
 };
 
