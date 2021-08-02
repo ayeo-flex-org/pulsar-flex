@@ -18,21 +18,31 @@ class Producer {
     this._sendResponseMediator = new responseMediators.SendResponseMediator({
       client: pulsar,
       commands: ['sendReceipt', 'sendError'],
+      producerConfiguration,
     });
     this._connected = false;
-    services.reconnect(this._client, this.create, this._setConnected, this._producerConfigiration);
+    services.producerClose({
+      client: this._client,
+      create: this.create,
+      setConnected: this._setConnected,
+      sendResponseMediator: this._sendResponseMediator,
+    });
   }
 
-  _setConnected = () => (this._connected = false);
+  _setConnected = (connected) => (this._connected = connected);
 
   create = async () => {
     await this._client.connect({ topic: this._topic });
-    this._connected = true;
+    this._setConnected(true);
+    await this._client
+      .getCnx()
+      .addCleanUpListener(async () => await services.reconnect(this.create, this._setConnected));
     const { command } = await services.create({
       topic: this._topic,
       requestId: this._requestId,
       producerId: this._producerId,
-      cnx: this._client.getCnx(),
+      producerName: this._producerName,
+      client: this._client,
       responseMediator: this._createCloseResponseMediator,
       producerConfiguration: this._producerConfigiration,
     });
@@ -46,7 +56,7 @@ class Producer {
   close = async () => {
     await services.close({
       producerId: this._producerId,
-      cnx: this._client.getCnx(),
+      client: this._client,
       requestId: this._requestId,
       responseMediator: this._createCloseResponseMediator,
     });
@@ -55,29 +65,46 @@ class Producer {
   };
 
   sendMessage = async ({ payload, properties }) => {
-    if (!utils.isNil(payload)) throw new errors.PulsarFlexNoPayloadError();
-    await services.sendMessage({
-      producerId: this._producerId,
-      producerName: this._producerName,
-      cnx: this._client.getCnx(),
-      sequenceId: this._sequenceId,
-      responseMediator: this._sendResponseMediator,
-      payload,
-      properties,
-    });
+    if (utils.isNil(payload)) throw new errors.PulsarFlexNoPayloadError();
+    try {
+      await services.sendMessage({
+        producerId: this._producerId,
+        producerName: this._producerName,
+        client: this._client,
+        sequenceId: this._sequenceId,
+        responseMediator: this._sendResponseMediator,
+        payload,
+        properties,
+      });
+    } catch (e) {
+      await new Promise(async (resolve, reject) => {
+        this._client.getResponseEvents().once('producerSuccess', () => {
+          resolve(this.sendMessage({ payload, properties }));
+        });
+      });
+    }
     this._sequenceId++;
     return true;
   };
 
   sendBatch = async ({ messages }) => {
-    await services.sendBatch({
-      producerId: this._producerId,
-      producerName: this._producerName,
-      cnx: this._client.getCnx(),
-      sequenceId: this._sequenceId,
-      responseMediator: this._sendResponseMediator,
-      messages,
-    });
+    try {
+      await services.sendBatch({
+        producerId: this._producerId,
+        producerName: this._producerName,
+        client: this._client,
+        sequenceId: this._sequenceId,
+        responseMediator: this._sendResponseMediator,
+        messages,
+      });
+    } catch (e) {
+      return await new Promise(async (resolve, reject) => {
+        this._client.getResponseEvents().once('producerSuccess', () => {
+          resolve(this.sendBatch({ messages }));
+        });
+      });
+    }
+
     this._sequenceId++;
     return true;
   };

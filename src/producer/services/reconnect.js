@@ -1,13 +1,9 @@
-const reconnect = (client, create, setConnected, { reconnectTimeout = 1000 }) => {
-  const responseEvents = client.getResponseEvents();
-  responseEvents.on('closeProducer', () => {
-    setConnected(false);
-    client.getCnx().close();
+const utils = require('../../utils');
 
-    create()
-      .then(setConnected(true))
-      .catch(() => console.log('Should handle when no reconnected successfully'));
+const reconnect = (create, setConnected) =>
+  create().catch(async () => {
+    await utils.sleep(5000);
+    await reconnect(create, setConnected);
   });
-};
 
 module.exports = reconnect;

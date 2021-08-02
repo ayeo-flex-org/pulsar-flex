@@ -1,8 +1,11 @@
+const errors = require('../../errors');
+
 class ResponseMediator {
-  constructor({ client }) {
+  constructor({ client, timeout = 5000 }) {
     this._requests = {};
     this._commands = [];
     this._responseEvents = client.getResponseEvents();
+    this._timeout = timeout;
   }
 
   _startToMediate() {
@@ -10,6 +13,7 @@ class ResponseMediator {
       this._responseEvents.on(command, (eventData) => {
         const id = this._idFunc(eventData);
         this._requests[id] && this._requests[id].resolve(eventData);
+        this._requests[id] && delete this._requests[id];
       });
     });
   }
@@ -22,11 +26,16 @@ class ResponseMediator {
 
   _idFunc() {}
 
-  response({ data, timeout = 5000 }) {
+  purgeRequests({ error }) {
+    Object.values(this._requests).forEach(({ reject }) => reject(new error({})));
+  }
+
+  response({ data, autoResolve }) {
     const id = this._idFunc(this._parseCommand(data));
     return new Promise((resolve, reject) => {
-      this._requests[id] = { resolve };
-      setTimeout(() => reject(new Error('Timed out waiting for response mediator')), timeout);
+      autoResolve && resolve();
+      setTimeout(() => reject(new errors.PulsarFlexResponseTimeoutError({ id })), this._timeout);
+      this._requests[id] = { resolve, reject };
     });
   }
 }

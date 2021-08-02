@@ -15,24 +15,18 @@ const lookup = async ({
 }) => {
   try {
     const [serviceHost, servicePort] = discoveryServers[index].split(':');
-
     const lookupCommand = commands.lookup({ topic, requestId });
-
     const discoveryCnx = await connection({ host: serviceHost, port: servicePort });
-
     await connectorService({
       cnx: discoveryCnx,
       jwt,
       responseMediator: connectorServiceResponseMediator,
     });
-
     const { command } = await discoveryCnx.sendSimpleCommandRequest(
       { command: lookupCommand },
       responseMediator
     );
-
     discoveryCnx.close();
-
     if (command.error) throw new errors.PulsarFlexTopicLookupError({ message: command.message });
     const [protocolName, hostPort] = command.brokerserviceurl.split('://');
     const [host, port] = hostPort.split(':');

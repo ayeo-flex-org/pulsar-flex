@@ -12,8 +12,6 @@ class Client {
     this._cnx = null;
     this._responseMediator = null;
     this._requestIdResponseMediator = null;
-
-    this._initMediators();
   }
 
   _initMediators() {
@@ -29,6 +27,7 @@ class Client {
   }
 
   async connect({ topic }) {
+    this._initMediators();
     const { host, port } = await services.lookup({
       discoveryServers: this._discoveryServers,
       topic: topic,
@@ -39,15 +38,12 @@ class Client {
       connectorServiceResponseMediator: this._responseMediator,
       reconnectionTimeMs: this._circularReconnectionMs,
     });
-
     this._cnx = await connection({ host, port });
-
     await services.connector({
       cnx: this._cnx,
       responseMediator: this._responseMediator,
       jwt: this._jwt,
     });
-
     const cleanUpPinger = services.pinger({
       cnx: this._cnx,
       pingingIntervalMs: 60000,

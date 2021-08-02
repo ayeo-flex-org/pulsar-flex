@@ -4,19 +4,19 @@ const sendMessage = async ({
   producerName,
   sequenceId,
   producerId,
-  cnx,
+  client,
   responseMediator,
   payload,
   properties,
 }) => {
-  const { sendPayloadCommandRequest } = cnx;
+  const { sendPayloadCommandRequest } = client.getCnx();
   const messageMetadata = commands.messageMetadata({
     producerName,
     sequenceId,
     properties,
   });
   const sendMessages = commands.sendMessages({ producerId, sequenceId });
-  await sendPayloadCommandRequest(
+  return await sendPayloadCommandRequest(
     {
       metadataCommand: messageMetadata,
       command: sendMessages,
