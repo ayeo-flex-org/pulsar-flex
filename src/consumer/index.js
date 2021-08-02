@@ -123,15 +123,11 @@ module.exports = class Consumer {
         if (autoAck) {
           await this._ack({ messageIdData: message.command.messageId, ackType: ACK_TYPES.INDIVIDUAL });
         }
-        onMessage({
+        await onMessage({
           message: message.payload.toString(),
           metadata: message.metadata,
           command: message.command,
-          ack: (specifiedAckType) =>
-            this._ack({
-              messageIdData: message.command.messageId,
-              ackType: specifiedAckType ? specifiedAckType : ACK_TYPES.INDIVIDUAL,
-            }),
+          ack: async () => this._ack({  messageIdData: message.command.messageId, ackType: ACK_TYPES.INDIVIDUAL}),
         });
         if(this.receiveQueue.length > 0) 
           process();
