@@ -8,6 +8,7 @@ const producerClose = ({ client, create, setConnected, sendResponseMediator }) =
     sendResponseMediator.purgeRequests({ error: errors.PulsarFlexProducerCloseError });
     client.getCnx().close();
     await reconnect(create, setConnected);
+    setConnected(true);
   });
 };
 

@@ -36,6 +36,7 @@ class Producer {
     });
   }
 
+  _setConnected = (isConnected) => (this._connected = isConnected);
   create = async () => {
     if (this._connected)
       throw new errors.PulsarFlexProducerCreationError({
