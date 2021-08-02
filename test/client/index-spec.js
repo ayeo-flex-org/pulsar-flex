@@ -1,4 +1,4 @@
-const { Pulsar } = require('../../src');
+const Pulsar = require('../../src/client');
 const config = require('../config');
 const assert = require('assert');
 
