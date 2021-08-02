@@ -1,10 +1,11 @@
 const errors = require('../../errors');
 
 class ResponseMediator {
-  constructor({ client }) {
+  constructor({ client, timeout = 5000 }) {
     this._requests = {};
     this._commands = [];
     this._responseEvents = client.getResponseEvents();
+    this._timeout = timeout;
   }
 
   _startToMediate() {
@@ -29,9 +30,10 @@ class ResponseMediator {
     Object.values(this._requests).forEach(({ reject }) => reject(new error({})));
   }
 
-  response({ data, timeout = 5000 }) {
+  response({ data }) {
     const id = this._idFunc(this._parseCommand(data));
     return new Promise((resolve, reject) => {
+      setTimeout(() => reject(new errors.PulsarFlexResponseTimeoutError()), this._timeout);
       this._requests[id] = { resolve, reject };
     });
   }

@@ -18,6 +18,7 @@ class Producer {
     this._sendResponseMediator = new responseMediators.SendResponseMediator({
       client: pulsar,
       commands: ['sendReceipt', 'sendError'],
+      producerConfiguration,
     });
     this._connected = false;
     services.producerClose({
