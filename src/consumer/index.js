@@ -99,10 +99,11 @@ module.exports = class Consumer {
     });
     this.client.getResponseEvents().off('message', this._reflow);
     this.isSubscribed = false;
+    this.receiveQueue = [];
   }
 
-  _ack = async ({ messageIdData, ackType }) => {
-    await services.ack({
+  _ack = ({ messageIdData, ackType }) => {
+    return services.ack({
       cnx: this.client.getCnx(),
       consumerId: this.consumerId,
       messageIdData,
@@ -127,7 +128,7 @@ module.exports = class Consumer {
           message: message.payload.toString(),
           metadata: message.metadata,
           command: message.command,
-          ack: async () => this._ack({  messageIdData: message.command.messageId, ackType: ACK_TYPES.INDIVIDUAL}),
+          ack: (options={}) => this._ack({  messageIdData: message.command.messageId, ackType: options.type ? options.type : ACK_TYPES.INDIVIDUAL}),
         });
         if(this.receiveQueue.length > 0) 
           process();

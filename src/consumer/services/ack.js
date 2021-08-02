@@ -11,6 +11,7 @@ const ack = async ({ cnx, consumerId, messageIdData, ackType, requestId, respons
   });
   const { command } = await cnx.sendSimpleCommandRequest({ command: commandAck }, responseMediator);
   if (!utils.isNil(command.error)) throw new errors.PulsarFlexAckError(command.message);
+  return command;
 };
 
 module.exports = ack;
