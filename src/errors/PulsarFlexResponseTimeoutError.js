@@ -1,7 +1,7 @@
 class PulsarFlexResponseTimeoutError extends Error {
-  constructor() {
+  constructor({ id }) {
     super();
-    this.message = 'Timeout waiting for response from the Broker';
+    this.message = `Timeout waiting for response for request id: ${id} from the Broker`;
     this.name = 'PulsarFlexResponseTimeoutError';
   }
 }

@@ -30,10 +30,11 @@ class ResponseMediator {
     Object.values(this._requests).forEach(({ reject }) => reject(new error({})));
   }
 
-  response({ data }) {
+  response({ data, autoResolve }) {
     const id = this._idFunc(this._parseCommand(data));
     return new Promise((resolve, reject) => {
-      setTimeout(() => reject(new errors.PulsarFlexResponseTimeoutError()), this._timeout);
+      autoResolve && resolve();
+      setTimeout(() => reject(new errors.PulsarFlexResponseTimeoutError({ id })), this._timeout);
       this._requests[id] = { resolve, reject };
     });
   }

@@ -77,8 +77,8 @@ class Producer {
         properties,
       });
     } catch (e) {
-      return await new Promise(async (resolve, reject) => {
-        this._client.getResponseEvents().on('producerSuccess', () => {
+      await new Promise(async (resolve, reject) => {
+        this._client.getResponseEvents().once('producerSuccess', () => {
           resolve(this.sendMessage({ payload, properties }));
         });
       });
@@ -99,7 +99,7 @@ class Producer {
       });
     } catch (e) {
       return await new Promise(async (resolve, reject) => {
-        this._client.getResponseEvents().on('producerSuccess', () => {
+        this._client.getResponseEvents().once('producerSuccess', () => {
           resolve(this.sendBatch({ messages }));
         });
       });
