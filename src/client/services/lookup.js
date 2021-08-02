@@ -9,7 +9,7 @@ const lookup = async ({
   topic,
   requestId,
   index = 0,
-  reconnectionTimeMs = 10000,
+  reconnectionTimeMs,
   connectorService,
   connectorServiceResponseMediator,
 }) => {

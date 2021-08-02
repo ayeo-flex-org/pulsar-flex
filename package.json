@@ -5,9 +5,10 @@
   "main": "src/index.js",
   "scripts": {
     "pretest": "npm run test-setup",
-    "test-setup": "node ./scripts/test-setup.js 2.8.0 50000",
-    "test": "mocha --recursive --exit test/",
+    "test-setup": "node ./scripts/test-setup.js 2.8.0 35000",
+    "test": "mocha --recursive --timeout 20000 --exit test/",
     "test-without-setup": "mocha --recursive --exit test/",
+    "test-consumer": "mocha test/consumer/index-spec.js --exit",
     "interact": "scripts/docker exec -it pulsar /bin/bash"
   },
   "devDependencies": {

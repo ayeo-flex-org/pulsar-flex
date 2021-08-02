@@ -89,4 +89,19 @@ describe('Client tests', function () {
       );
     });
   });
+  describe('on not existent discoveryServers', function () {
+    it('should retry until succeeds', async function () {
+      const pulsar = new Pulsar({
+        discoveryServers: [
+          'wronghost:1234',
+          'localhost:wrongPort',
+          'wrongFormat',
+          ...discoveryServers,
+        ],
+        jwt,
+      });
+
+      await pulsar.connect({ topic });
+    });
+  });
 });
