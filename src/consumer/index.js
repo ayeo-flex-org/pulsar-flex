@@ -73,10 +73,9 @@ module.exports = class Consumer {
       readCompacted: this.readCompacted,
       requestId: this.requestId++,
     });
-    const a = await this.client
+    await this.client
       .getCnx()
       .sendSimpleCommandRequest({ command: subscribeCommand }, this.subscribeResponseMediator);
-    console.log(a);
   }
 
   flow = async (flowSize) => {
@@ -102,8 +101,6 @@ module.exports = class Consumer {
   run = async ({ onMessage = null, autoAck = true }) => {
     this.client.getResponseEvents().on('message', async (data) => {
       this.receiveQueue.push(data);
-      // console.log(this.receiveQueue);
-      console.log(data.payload.toString());
       if (autoAck) {
         await this._ack({ messageIdData: data.command.messageId, ackType: ACK_TYPES.INDIVIDUAL });
       }

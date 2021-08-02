@@ -28,8 +28,6 @@ class Client {
 
   async connect({ topic }) {
     this._initMediators();
-
-    console.log('before lookup');
     const { host, port } = await services.lookup({
       discoveryServers: this._discoveryServers,
       topic: topic,
@@ -39,19 +37,12 @@ class Client {
       connectorService: services.connector,
       connectorServiceResponseMediator: this._responseMediator,
     });
-    console.log('after lookup');
-
     this._cnx = await connection({ host, port });
-
-    console.log('got cnx');
-
     await services.connector({
       cnx: this._cnx,
       responseMediator: this._responseMediator,
       jwt: this._jwt,
     });
-    console.log('connector');
-
     const cleanUpPinger = services.pinger({
       cnx: this._cnx,
       pingingIntervalMs: 60000,
@@ -64,8 +55,6 @@ class Client {
 
     this._cnx.addCleanUpListener(cleanUpPonger);
     this._cnx.addCleanUpListener(cleanUpPinger);
-
-    console.log('set cleanup');
   }
 
   getCnx() {

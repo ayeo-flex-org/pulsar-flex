@@ -3,17 +3,8 @@ const resolver = require('../resolver');
 const serde = require('../serde');
 
 const sendRequest = (request, nonSerializedData, socket, responseMediator) => {
-  console.log('f');
-  console.log(socket.readyState);
-  console.log(nonSerializedData);
-  if (socket.readyState !== 'open') throw new Error('fuckkk');
-  console.log('u');
   socket.write(request, 'binary');
-  console.log('ck');
-
-  const idk = responseMediator.response({ data: nonSerializedData });
-  console.log(idk);
-  return idk;
+  return responseMediator.response({ data: nonSerializedData });
 };
 
 const connection = async ({ host, port }) => {
@@ -21,7 +12,7 @@ const connection = async ({ host, port }) => {
     host,
     port,
     onData: resolver.data,
-    onError: (e) => console.log(e),
+    onError: (e) => console.error(e),
   });
   return {
     sendSimpleCommandRequest: (dataToSerialize, responseMediator) => {
