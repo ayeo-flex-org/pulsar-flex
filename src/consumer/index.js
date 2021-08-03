@@ -2,18 +2,11 @@ const responseMediators = require('../responseMediators');
 const services = require('./services');
 const Pulsar = require('../client');
 const { PulsarFlexNotSubscribedError } = require('../errors');
+const pulsarApi = require('../commands/protocol/pulsar/pulsar_pb');
 
-const SUB_TYPES = {
-  EXCLUSIVE: 0,
-  SHARED: 1,
-  FAILOVER: 2,
-  KEY_SHARED: 3,
-};
-
-const ACK_TYPES = {
-  INDIVIDUAL: 0,
-  CUMULATIVE: 1,
-};
+const SUB_TYPES = pulsarApi.CommandSubscribe.SubType;
+const ACK_TYPES = pulsarApi.CommandAck.AckType;
+const INITIAL_POSITION = pulsarApi.CommandSubscribe.InitialPosition;
 
 module.exports = class Consumer {
   constructor({
@@ -23,6 +16,7 @@ module.exports = class Consumer {
     subscription,
     subType,
     consumerName,
+    initialPosition = INITIAL_POSITION.LATEST,
     readCompacted = false,
     receiveQueueSize = 500,
   }) {
@@ -35,14 +29,15 @@ module.exports = class Consumer {
     this.subType = subType;
     this.consumerName = consumerName;
     this.readCompacted = readCompacted;
+    this.initialPosition = initialPosition;
     this.consumerId = 0;
-    this.requestId = 0;
+    this._requestId = 0;
     this.receiveQueueSize = receiveQueueSize;
-    this.curFlow = receiveQueueSize;
+    this._curFlow = receiveQueueSize;
 
     this.receiveQueue = [];
 
-    this.requestIdMediator = new responseMediators.RequestIdResponseMediator({
+    this._requestIdMediator = new responseMediators.RequestIdResponseMediator({
       client: this.client,
       commands: ['success', 'error', 'ackresponse'],
     });
@@ -55,11 +50,13 @@ module.exports = class Consumer {
     this._reflow = async (data) => {
       this.receiveQueue.push(data);
       const nextFlow = Math.ceil(this.receiveQueueSize / 2);
-      if (--this.curFlow <= nextFlow) {
-        this.curFlow += nextFlow;
+      if (--this._curFlow <= nextFlow) {
+        this._curFlow += nextFlow;
         await this._flow(nextFlow);
-      } 
-    }
+      }
+    };
+    
+    // graceful shutdown
   }
 
   static get SUB_TYPES() {
@@ -72,6 +69,9 @@ module.exports = class Consumer {
 
   subscribe = async () => {
     await this.client.connect({ topic: this.topic });
+    // forceful shutdown
+    this.client.getCnx()
+    .addCleanUpListener(async () => await services.reconnect(this.subscribe, this._cleanState));
     await services.subscribe({
       cnx: this.client.getCnx(),
       topic: this.topic,
@@ -79,27 +79,37 @@ module.exports = class Consumer {
       subType: this.subType,
       consumerId: this.consumerId,
       consumerName: this.consumerName,
+      initialPosition: this.initialPosition,
       readCompacted: this.readCompacted,
-      requestId: this.requestId++,
-      responseMediator: this.requestIdMediator,
+      requestId: this._requestId++,
+      responseMediator: this._requestIdMediator,
     });
     this.isSubscribed = true;
-  }
+  };
 
   _flow = async (flowAmount) => {
-    await services.flow({cnx: this.client.getCnx(), flowAmount, consumerId: this.consumerId, responseMediator: this.noId});
+    await services.flow({
+      cnx: this.client.getCnx(),
+      flowAmount,
+      consumerId: this.consumerId,
+      responseMediator: this.noId,
+    });
   };
+
+  _cleanState = () => {
+    this.client.getResponseEvents().off('message', this._reflow);
+    this.isSubscribed = false;
+    this.receiveQueue = [];
+  }
 
   unsubscribe = async () => {
     await services.unsubscribe({
       cnx: this.client.getCnx(),
       consumerId: this.consumerId,
-      requestId: this.requestId++,
-      responseMediator: this.requestIdMediator,
+      requestId: this._requestId++,
+      responseMediator: this._requestIdMediator,
     });
-    this.client.getResponseEvents().off('message', this._reflow);
-    this.isSubscribed = false;
-    this.receiveQueue = [];
+    this._cleanState();
   }
 
   _ack = ({ messageIdData, ackType }) => {
@@ -108,21 +118,23 @@ module.exports = class Consumer {
       consumerId: this.consumerId,
       messageIdData,
       ackType,
-      requestId: this.requestId++,
-      responseMediator: this.requestIdMediator,
-    })
+      requestId: this._requestId++,
+      responseMediator: this._requestIdMediator,
+    });
   };
 
   run = async ({ onMessage = null, autoAck = true }) => {
-    if(this.isSubscribed) {
-      
+    if (this.isSubscribed) {
       this.client.getResponseEvents().on('message', this._reflow);
-  
+
       const process = async () => {
-        if(!this.isSubscribed) return;
+        if (!this.isSubscribed) return;
         const message = this.receiveQueue.shift();
         if (autoAck) {
-          await this._ack({ messageIdData: message.command.messageId, ackType: ACK_TYPES.INDIVIDUAL });
+          await this._ack({
+            messageIdData: message.command.messageId,
+            ackType: ACK_TYPES.INDIVIDUAL,
+          });
         }
         await onMessage({
           message: message.payload.toString(),
@@ -130,17 +142,16 @@ module.exports = class Consumer {
           command: message.command,
           ack: (options={}) => this._ack({  messageIdData: message.command.messageId, ackType: options.type ? options.type : ACK_TYPES.INDIVIDUAL}),
         });
-        if(this.receiveQueue.length > 0) 
-          process();
-        else
-          setTimeout(process, 1000);
-      }
+        if (this.receiveQueue.length > 0) process();
+        else setTimeout(process, 1000);
+      };
 
       await this._flow(this.receiveQueueSize);
       process();
-    }
-    else {
-      throw PulsarFlexNotSubscribedError('You must be subscribed to the topic in order to start consuming messages.');
+    } else {
+      throw PulsarFlexNotSubscribedError(
+        'You must be subscribed to the topic in order to start consuming messages.'
+      );
     }
   };
 };

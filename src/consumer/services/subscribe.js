@@ -9,6 +9,7 @@ const subscribe = async ({
   subType,
   consumerId,
   consumerName,
+  initialPosition,
   readCompacted,
   requestId,
   responseMediator,
@@ -19,6 +20,7 @@ const subscribe = async ({
     subType,
     consumerId,
     consumerName,
+    initialPosition,
     readCompacted,
     requestId,
   });

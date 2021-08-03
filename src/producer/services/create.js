@@ -8,7 +8,7 @@ const create = async ({
   producerId,
   client,
   responseMediator,
-  producerConfiguration,
+  producerAccessMode,
   producerName,
 }) => {
   const { sendSimpleCommandRequest } = client.getCnx();
@@ -17,7 +17,7 @@ const create = async ({
     requestId,
     producerId,
     producerName,
-    ...producerConfiguration,
+    producerAccessMode,
   });
   const { command } = await sendSimpleCommandRequest({ command: createProducer }, responseMediator);
   if (!utils.isNil(command.error))

@@ -17,12 +17,9 @@ describe('Consumer tests', function () {
     receiveQueueSize: 1000,
   })
   beforeEach(async function() {
-    this.timeout(10000)
-    console.log('Clearing Backlog...');
     await utils.clearBacklog();
   })
-  this.afterEach(async function() {
-    this.timeout(10000)
+  afterEach(async function() {
     if(cons.isSubscribed)
       await cons.unsubscribe();
   })

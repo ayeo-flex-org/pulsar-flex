@@ -2,23 +2,30 @@ const services = require('./services');
 const responseMediators = require('../responseMediators');
 const errors = require('../errors');
 const utils = require('../utils');
+const Pulsar = require('../client');
+const pulsarApi = require('../commands/protocol/pulsar/pulsar_pb');
+
+const ACCESS_MODES = pulsarApi.ProducerAccessMode;
 
 class Producer {
-  constructor({ pulsar, topic, producerConfiguration }) {
-    this._client = pulsar;
+  constructor({ pulsar, topic, discoveryServers, jwt, producerAccessMode }) {
+    this._client = new Pulsar({
+      discoveryServers,
+      jwt,
+    });
     this._topic = topic;
-    this._producerConfigiration = producerConfiguration;
+    this._producerAccessMode = producerAccessMode;
     this._requestId = 0;
     this._producerId = 0;
     this._producerName = null;
     this._createCloseResponseMediator = new responseMediators.RequestIdResponseMediator({
-      client: pulsar,
+      client: this._client,
       commands: ['producerSuccess', 'success', 'error'],
     });
     this._sendResponseMediator = new responseMediators.SendResponseMediator({
-      client: pulsar,
+      client: this._client,
       commands: ['sendReceipt', 'sendError'],
-      producerConfiguration,
+      producerAccessMode,
     });
     this._connected = false;
     services.producerClose({
@@ -44,7 +51,7 @@ class Producer {
       producerName: this._producerName,
       client: this._client,
       responseMediator: this._createCloseResponseMediator,
-      producerConfiguration: this._producerConfigiration,
+      producerAccessMode: this._producerAccessMode,
     });
     const { producerName, lastSequenceId } = command;
     this._requestId++;
@@ -108,6 +115,10 @@ class Producer {
     this._sequenceId++;
     return true;
   };
+
+  static get ACCESS_MODES() {
+    return ACCESS_MODES;
+  }
 }
 
 module.exports = Producer;
