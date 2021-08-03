@@ -10,10 +10,10 @@ const SUB_TYPES = pulsarApi.CommandSubscribe.SubType;
 const ACK_TYPES = pulsarApi.CommandAck.AckType;
 const INITIAL_POSITION = pulsarApi.CommandSubscribe.InitialPosition;
 const STATES = {
-  ACTIVE: 0, // Subscribed and consuming messages
-  INACTIVE: 1, // Subscribed but not consuming messages
-  UNSUBSCRIBED: 2, // Not subscribed
-  ERROR: 3, // ???
+  ACTIVE: 'ACTIVE', // Subscribed and consuming messages
+  INACTIVE: 'INACTIVE', // Subscribed but not consuming messages
+  UNSUBSCRIBED: 'UNSUBSCRIBED', // Not subscribed
+  RECONNECTING: 'RECONNECTING', // ???
 }
 
 module.exports = class Consumer {
@@ -32,7 +32,7 @@ module.exports = class Consumer {
     logCreator = defaultLogger,
   }) {
     this._logger = createLogger({ logLevel, logCreator });
-    this.client = new Pulsar({
+    this._client = new Pulsar({
       discoveryServers,
       jwt,
       logger: this._logger
@@ -50,6 +50,9 @@ module.exports = class Consumer {
     this._requestId = 0;
     this._curFlow = receiveQueueSize;
     this._consumerState = STATES.UNSUBSCRIBED;
+    this._pendingMessages = []
+    
+    this._onMessageParams = {};
 
     this.receiveQueue = [];
 
@@ -95,10 +98,11 @@ module.exports = class Consumer {
     if(this.isSubscribed) {
       throw new PulsarFlexSubscribeError('Consumer is already subscribed.')
     }
+    this._logger.info(`Creating client connection for consumer: ${this.consumerName} with id: ${this.consumerId}`)
     await this._client.connect({ topic: this.topic });
 
-
     // Handles forceful & graceful shutdowns.
+    this._logger.info(`Setting up connection failure...`)
     services.connectionFailure({
       client: this._client,
       subscribe: this.subscribe,
@@ -111,6 +115,7 @@ module.exports = class Consumer {
       intervalMs: this.reconnectInterval,
       responseMediator: this._requestIdMediator,
     })
+    this._logger.info(`consumer: ${this.consumerName} id: ${this.consumerId} subscribing to topic: ${this.topic} with subscription: ${this.subscription}`)
     await services.subscribe({
       cnx: this._client.getCnx(),
       topic: this.topic,
@@ -124,7 +129,13 @@ module.exports = class Consumer {
       responseMediator: this._requestIdMediator,
     });
     this.isSubscribed = true;
-    this._consumerState = STATES.INACTIVE;
+    if(this.getState() === STATES.RECONNECTING) {
+      await this.run(this._onMessageParams);
+      this._setState(STATES.ACTIVE);
+    }
+    else {
+      this._setState(STATES.INACTIVE);
+    }
   };
 
   getState = () => {
@@ -133,6 +144,7 @@ module.exports = class Consumer {
 
   _setState = (state) => {
     this._consumerState = state;
+    this._logger.info(`Changing consumer state -> consumer: ${this.consumerName} id: ${this.consumerId} STATE: ${this.getState()}`)
   }
 
   _flow = async (flowAmount) => {
@@ -145,7 +157,6 @@ module.exports = class Consumer {
   };
 
   _cleanState = () => {
-    this._client.getResponseEvents().removeAllListeners()
     this._client.getResponseEvents().off('message', this._reflow);
     this.isSubscribed = false;
     this.receiveQueue = [];
@@ -155,31 +166,41 @@ module.exports = class Consumer {
     if(!this.isSubscribed) {
       throw new PulsarFlexUnsubscribeError('Consumer is already unsubscribed.')
     }
+    this._logger.info(`consumer: ${this.consumerName} id: ${this.consumerId} unsubscribing to topic: ${this.topic} with subscription: ${this.subscription}`)
     await services.unsubscribe({
       cnx: this._client.getCnx(),
       consumerId: this.consumerId,
       requestId: this._requestId++,
       responseMediator: this._requestIdMediator,
     });
-    this._consumerState = STATES.UNSUBSCRIBED;
+    this._setState(STATES.UNSUBSCRIBED);
+    this._logger.info(`Closing client connection for consumer: ${this.consumerName} id: ${this.consumerId}`)
     this._client.getCnx().close(); 
     this._cleanState();
   }
 
   _ack = ({ messageIdData, ackType }) => {
-    return services.ack({
-      cnx: this._client.getCnx(),
-      consumerId: this.consumerId,
-      messageIdData,
-      ackType,
-      requestId: this._requestId++,
-      responseMediator: this._requestIdMediator,
-    });
+    try {
+      return services.ack({
+        cnx: this._client.getCnx(),
+        consumerId: this.consumerId,
+        messageIdData,
+        ackType,
+        requestId: this._requestId++,
+        responseMediator: this._requestIdMediator,
+      });
+    }
+    catch (e) {
+      if(e.name === 'PulsarFlexConsumerCloseError') {
+        console.log('need to re-deliver acks :/');
+      }
+    }
   };
 
   run = async ({ onMessage = null, autoAck = true }) => {
     if (this.isSubscribed) {
-      this._consumerState = STATES.ACTIVE;
+      this._onMessageParams = {onMessage, autoAck}
+      this._setState(STATES.ACTIVE);
       this._client.getResponseEvents().on('message', this._reflow);
 
       const process = async () => {
@@ -204,7 +225,7 @@ module.exports = class Consumer {
       await this._flow(this.receiveQueueSize);
       process();
     } else {
-      throw PulsarFlexNotSubscribedError(
+      throw new PulsarFlexNotSubscribedError(
         'You must be subscribed to the topic in order to start consuming messages.'
       );
     }

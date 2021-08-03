@@ -2,7 +2,8 @@ const { Consumer } = require('../../src');
 const config = require('../config');
 const assert = require('assert');
 const utils = require('../utils');
-const sleep = require('../../src/utils/sleep')
+const sleep = require('../../src/utils/sleep');
+const { LEVELS } = require('../../src/logger');
 
 const { jwt, discoveryServers, topic , containerName} = config;
 
@@ -16,6 +17,7 @@ describe('Consumer tests', function () {
     consumerName: 'Consy',
     readCompacted: false,
     receiveQueueSize: 1000,
+    logLevel: LEVELS.INFO,
   })
   beforeEach(async function() {
     await utils.clearBacklog();
@@ -23,42 +25,6 @@ describe('Consumer tests', function () {
   afterEach(async function() {
     if(cons.isSubscribed)
       await cons.unsubscribe();
-  })
-  describe('Consumer Connection tests', function() {
-    it('should reconnect after closeConsumer event', async function() {
-      await cons.subscribe();
-      console.log('subscribed');
-      await utils.unloadTopic();
-      console.log('unloaded');
-      await sleep(100000);
-    })
-    it('should reconnect after unexpected connection loss', async function() {
-        await cons.subscribe();        
-        
-        // this test needs some 200iq logic.
-        await new Promise((resolve) => {
-          
-          // const waitForError = () => {
-          //   if(cons.getState() !== Consumer.CONSUMER_STATES.ERROR)
-          // }
-
-          // const waitForConnect = async () => {
-          //   //if(cons.getState() === Consumer.CONSUMER_STATES.ERROR){ 
-          //     await sleep(1000)
-          //     waitForConnect();
-          //   //}
-          //   //resolve();
-          // }
-          // // never do this
-          // cons._client.getCnx().close();
-          // console.log('closed conn')
-          // waitForConnect();
-          resolve();
-        });
-
-
-        
-    })
   })
   it('should consume the messages successfully', async function () {
     try {
@@ -84,6 +50,28 @@ describe('Consumer tests', function () {
       assert.ok(false);
     }
   });
+  describe('Consumer Connection tests', function() {
+    it('should re-connect after topic unload', async function() {
+      await cons.subscribe();
+      console.log('subscribed');
+      let msgCounter = 0;
+      await utils.produceMsgs({messages: ['hello', 'goodbye']});
+      await new Promise((resolve, reject) => {
+          cons.run({
+              onMessage: async ({ ack, message }) => {
+                msgCounter++;
+                if(msgCounter == 1)
+                  await utils.unloadTopic();
+                if(msgCounter > 1)
+                  resolve();
+              },
+              autoAck: true,
+          })
+      })
+
+    })    
+    })
+  })
   describe('Automatic Ack', function() {
     it('Should not re-consume the message', async function() {
       let firstMessage;

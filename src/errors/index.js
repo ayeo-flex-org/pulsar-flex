@@ -9,7 +9,7 @@ const PulsarFlexSubscribeError = require('./PulsarFlexSubscribeError');
 const PulsarFlexUnsubscribeError = require('./PulsarFlexUnsubscribeError');
 const PulsarFlexFlowError = require('./PulsarFlexFlowError');
 const PulsarFlexAckError = require('./PulsarFlexAckError');
-const PulsarFlexNotSubscribedError = require('./PulsarFlexUnsubscribeError');
+const PulsarFlexNotSubscribedError = require('./PulsarFlexNotSubscribedError');
 const PulsarFlexProducerSendError = require('./PulsarFlexProducerSendError');
 const PulsarFlexConsumerCloseError = require('./PulsarFlexConsumerCloseError');
 
