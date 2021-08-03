@@ -17,12 +17,13 @@ class Producer {
     producerAccessMode,
     logLevel,
     logCreator = defaultLogger,
+    maxPendingMessagesQueueSize = Number.MAX_SAFE_INTEGER,
   }) {
     this._logger = createLogger({ logLevel, logCreator });
     this._client = new Pulsar({
       discoveryServers,
       jwt,
-      logger: this._logger
+      logger: this._logger,
     });
     this._topic = topic;
     this._producerAccessMode = producerAccessMode;
@@ -45,6 +46,9 @@ class Producer {
       setConnected: this._setConnected,
       sendResponseMediator: this._sendResponseMediator,
     });
+    this._pendingMessageQueue = [];
+    this._maxPendingMessagesQueueSize = maxPendingMessagesQueueSize;
+    services.resendMessages(this._client, this._pendingMessageQueue);
   }
 
   _setConnected = (isConnected) => (this._connected = isConnected);
@@ -56,7 +60,7 @@ class Producer {
     await this._client.connect({ topic: this._topic });
     await this._client.getCnx().addCleanUpListener(() => {
       this._connected = false;
-      services.reconnect(this.create).then(() => (this._connected = true));
+      this._created && services.reconnect(this.create).then(() => (this._connected = true));
     });
     const { command } = await services.create({
       topic: this._topic,
@@ -68,6 +72,7 @@ class Producer {
       producerAccessMode: this._producerAccessMode,
     });
     this._connected = true;
+    this._created = true;
     const { producerName, lastSequenceId } = command;
     this._requestId++;
     this._producerName = producerName;
@@ -76,6 +81,7 @@ class Producer {
   };
 
   close = async () => {
+    this._created = false;
     await services.close({
       connected: this._connected,
       producerId: this._producerId,
@@ -89,13 +95,17 @@ class Producer {
   };
 
   sendMessage = async ({ payload, properties }) => {
-    if (!this._connected)
+    if (!this._created)
       throw new errors.PulsarFlexProducerSendError({
-        message: 'Cannot send messages over not connected producer',
+        message: 'Cannot send messages over not created producer',
+      });
+    if (this._pendingMessageQueue.length === this._maxPendingMessagesQueueSize - 1)
+      throw new errors.PulsarFlexProducerSendError({
+        message: 'Pending messages queue size has been exceeded',
       });
     if (utils.isNil(payload)) throw new errors.PulsarFlexNoPayloadError();
     try {
-      await services.sendMessage({
+      const { command } = await services.sendMessage({
         producerId: this._producerId,
         producerName: this._producerName,
         client: this._client,
@@ -104,10 +114,22 @@ class Producer {
         payload,
         properties,
       });
+      if (!utils.isNil(command.error)) throw new errors.PulsarFlexProducerSendError(command.error);
     } catch (e) {
+      if (e.name === 'PulsarFlexProducerSendError') throw e;
       await new Promise(async (resolve, reject) => {
-        this._client.getResponseEvents().once('producerSuccess', () => {
-          resolve(this.sendMessage({ payload, properties }));
+        this._pendingMessageQueue.push({
+          func: () =>
+            services.sendMessage({
+              producerId: this._producerId,
+              producerName: this._producerName,
+              client: this._client,
+              sequenceId: this._sequenceId,
+              responseMediator: this._sendResponseMediator,
+              payload,
+              properties,
+            }),
+          resolve,
         });
       });
     }
@@ -116,9 +138,13 @@ class Producer {
   };
 
   sendBatch = async ({ messages }) => {
-    if (!this._connected)
+    if (!this._created)
       throw new errors.PulsarFlexProducerSendError({
-        message: 'Cannot send messages over not connected producer',
+        message: 'Cannot send messages over not created producer',
+      });
+    if (this._pendingMessageQueue.length === this._maxPendingMessagesQueueSize - 1)
+      throw new errors.PulsarFlexProducerSendError({
+        message: 'Pending messages queue size has been exceeded',
       });
     try {
       await services.sendBatch({
@@ -129,14 +155,24 @@ class Producer {
         responseMediator: this._sendResponseMediator,
         messages,
       });
+      if (!utils.isNil(command.error)) throw new errors.PulsarFlexProducerSendError(command.error);
     } catch (e) {
-      return await new Promise(async (resolve, reject) => {
-        this._client.getResponseEvents().once('producerSuccess', () => {
-          resolve(this.sendBatch({ messages }));
+      if (e.name !== 'PulsarFlexProducerSendError') throw e;
+      await new Promise(async (resolve, reject) => {
+        this._pendingMessageQueue.push({
+          func: () =>
+            services.sendBatch({
+              producerId: this._producerId,
+              producerName: this._producerName,
+              client: this._client,
+              sequenceId: this._sequenceId,
+              responseMediator: this._sendResponseMediator,
+              messages,
+            }),
+          resolve,
         });
       });
     }
-
     this._sequenceId++;
     return true;
   };

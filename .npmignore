@@ -1,0 +1,13 @@
+fixtures
+scripts/
+examples/
+docs/
+.prettierrc
+.prettierignore
+.eslintrc
+.eslintignore
+.vscode/
+.github/
+test/
+docker/
+.run/

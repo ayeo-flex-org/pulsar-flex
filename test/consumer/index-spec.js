@@ -39,7 +39,7 @@ describe('Consumer tests', function () {
                   messages.push(message);
                   if(messages.length >= expectedMessages.length) {
                       resolve()
-                  };
+                  }
               },
           })
       })
@@ -71,7 +71,6 @@ describe('Consumer tests', function () {
 
     })    
     })
-  })
   describe('Automatic Ack', function() {
     it('Should not re-consume the message', async function() {
       let firstMessage;
