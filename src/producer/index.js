@@ -73,6 +73,7 @@ class Producer {
       responseMediator: this._createCloseResponseMediator,
     });
     this._requestId++;
+    this._connected = false;
     return true;
   };
 
