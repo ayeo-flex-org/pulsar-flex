@@ -4,14 +4,25 @@ const errors = require('../errors');
 const utils = require('../utils');
 const Pulsar = require('../client');
 const pulsarApi = require('../commands/protocol/pulsar/pulsar_pb');
+const { createLogger, LEVELS } = require('../logger');
+const defaultLogger = require('../logger/default');
 
 const ACCESS_MODES = pulsarApi.ProducerAccessMode;
 
 class Producer {
-  constructor({ pulsar, topic, discoveryServers, jwt, producerAccessMode }) {
+  constructor({
+    topic,
+    discoveryServers,
+    jwt,
+    producerAccessMode,
+    logLevel,
+    logCreator = defaultLogger,
+  }) {
+    this._logger = createLogger({ logLevel, logCreator });
     this._client = new Pulsar({
       discoveryServers,
       jwt,
+      logger: this._logger
     });
     this._topic = topic;
     this._producerAccessMode = producerAccessMode;
