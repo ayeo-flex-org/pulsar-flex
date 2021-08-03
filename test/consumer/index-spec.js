@@ -25,6 +25,13 @@ describe('Consumer tests', function () {
       await cons.unsubscribe();
   })
   describe('Consumer Connection tests', function() {
+    it('should reconnect after closeConsumer event', async function() {
+      await cons.subscribe();
+      console.log('subscribed');
+      await utils.unloadTopic();
+      console.log('unloaded');
+      await sleep(100000);
+    })
     it('should reconnect after unexpected connection loss', async function() {
         await cons.subscribe();        
         

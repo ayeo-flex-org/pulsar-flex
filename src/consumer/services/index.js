@@ -1,15 +1,15 @@
 const subscribe = require('./subscribe');
-const unsubscribe = require('./closeConsumer');
+const unsubscribe = require('./unsubscribe');
 const flow = require('./flow');
 const ack = require('./ack');
-const reconnect = require('./reconnect');
+const connectionFailure = require('./connectionFailure');
 
 const services = {
   subscribe,
   unsubscribe,
   flow,
   ack,
-  reconnect,
+  connectionFailure,
 };
 
 module.exports = services;

@@ -25,6 +25,7 @@ module.exports = class Consumer {
     initialPosition = INITIAL_POSITION.LATEST,
     readCompacted = false,
     receiveQueueSize = 500,
+    reconnectInterval = 5000,
   }) {
     this._client = new Pulsar({
       discoveryServers,
@@ -37,8 +38,10 @@ module.exports = class Consumer {
     this.readCompacted = readCompacted;
     this.initialPosition = initialPosition;
     this.consumerId = 0;
-    this._requestId = 0;
     this.receiveQueueSize = receiveQueueSize;
+    this.reconnectInterval = reconnectInterval;
+    
+    this._requestId = 0;
     this._curFlow = receiveQueueSize;
     this._consumerState = STATES.UNSUBSCRIBED;
 
@@ -87,17 +90,21 @@ module.exports = class Consumer {
       throw new PulsarFlexSubscribeError('Consumer is already subscribed.')
     }
     await this._client.connect({ topic: this.topic });
-    // forceful shutdown
-    this._client.getCnx()
-    .addCleanUpListener(async () => await services.reconnect({ 
+
+
+    // Handles forceful & graceful shutdowns.
+    services.connectionFailure({
+      client: this._client,
       subscribe: this.subscribe,
       cleanState: this._cleanState,
       consumerState: {
         get: this.getState,
         set: this._setState,
-        states: Consumer.CONSUMER_STATES,
+        states: Consumer.CONSUMER_STATES
       },
-    }));
+      intervalMs: this.reconnectInterval,
+      responseMediator: this._requestIdMediator,
+    })
     await services.subscribe({
       cnx: this._client.getCnx(),
       topic: this.topic,
