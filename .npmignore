@@ -2,6 +2,7 @@ fixtures
 scripts/
 examples/
 docs/
+.idea/
 .prettierrc
 .prettierignore
 .eslintrc
