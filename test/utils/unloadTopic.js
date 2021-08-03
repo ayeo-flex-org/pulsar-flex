@@ -1,10 +1,10 @@
 const asyncExec = require('./asyncExec');
 const config = require('../config');
 
-const { containerName, topic } = config;
+const { topic, containerName } = config;
 
-const unloadTopic = async () => {
+const produceMsgs = async () => {
   await asyncExec(`docker exec ${containerName} /pulsar/bin/pulsar-admin topics unload ${topic}`);
 };
 
-module.exports = unloadTopic;
+module.exports = produceMsgs;
