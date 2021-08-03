@@ -3,11 +3,16 @@ const services = require('./services');
 const Pulsar = require('../client');
 const { PulsarFlexNotSubscribedError, PulsarFlexSubscribeError, PulsarFlexUnsubscribeError } = require('../errors');
 const pulsarApi = require('../commands/protocol/pulsar/pulsar_pb');
-const CONSUMER_STATES = require('./consumerStates');
 
 const SUB_TYPES = pulsarApi.CommandSubscribe.SubType;
 const ACK_TYPES = pulsarApi.CommandAck.AckType;
 const INITIAL_POSITION = pulsarApi.CommandSubscribe.InitialPosition;
+const STATES = {
+  ACTIVE: 0, // Subscribed and consuming messages
+  INACTIVE: 1, // Subscribed but not consuming messages
+  UNSUBSCRIBED: 2, // Not subscribed
+  ERROR: 3, // ???
+}
 
 module.exports = class Consumer {
   constructor({
@@ -21,7 +26,7 @@ module.exports = class Consumer {
     readCompacted = false,
     receiveQueueSize = 500,
   }) {
-    this.client = new Pulsar({
+    this._client = new Pulsar({
       discoveryServers,
       jwt,
     });
@@ -35,16 +40,16 @@ module.exports = class Consumer {
     this._requestId = 0;
     this.receiveQueueSize = receiveQueueSize;
     this._curFlow = receiveQueueSize;
-    this._consumerState = CONSUMER_STATES.UNSUBSCRIBED;
+    this._consumerState = STATES.UNSUBSCRIBED;
 
     this.receiveQueue = [];
 
     this._requestIdMediator = new responseMediators.RequestIdResponseMediator({
-      client: this.client,
+      client: this._client,
       commands: ['success', 'error', 'ackresponse'],
     });
     this.noId = new responseMediators.NoIdResponseMediator({
-      client: this.client,
+      client: this._client,
       commands: ['message'],
     });
 
@@ -73,23 +78,28 @@ module.exports = class Consumer {
     return INITIAL_POSITION;
   }
 
+  static get CONSUMER_STATES () {
+    return STATES;
+  }
+
   subscribe = async () => {
     if(this.isSubscribed) {
       throw new PulsarFlexSubscribeError('Consumer is already subscribed.')
     }
-    await this.client.connect({ topic: this.topic });
+    await this._client.connect({ topic: this.topic });
     // forceful shutdown
-    this.client.getCnx()
+    this._client.getCnx()
     .addCleanUpListener(async () => await services.reconnect({ 
       subscribe: this.subscribe,
       cleanState: this._cleanState,
       consumerState: {
-        get: this._getState,
+        get: this.getState,
         set: this._setState,
+        states: Consumer.CONSUMER_STATES,
       },
     }));
     await services.subscribe({
-      cnx: this.client.getCnx(),
+      cnx: this._client.getCnx(),
       topic: this.topic,
       subscription: this.subscription,
       subType: this.subType,
@@ -101,10 +111,10 @@ module.exports = class Consumer {
       responseMediator: this._requestIdMediator,
     });
     this.isSubscribed = true;
-    this._consumerState = CONSUMER_STATES.INACTIVE;
+    this._consumerState = STATES.INACTIVE;
   };
 
-  _getState = () => {
+  getState = () => {
     return this._consumerState;
   }
 
@@ -114,7 +124,7 @@ module.exports = class Consumer {
 
   _flow = async (flowAmount) => {
     await services.flow({
-      cnx: this.client.getCnx(),
+      cnx: this._client.getCnx(),
       flowAmount,
       consumerId: this.consumerId,
       responseMediator: this.noId,
@@ -122,7 +132,7 @@ module.exports = class Consumer {
   };
 
   _cleanState = () => {
-    this.client.getResponseEvents().off('message', this._reflow);
+    this._client.getResponseEvents().off('message', this._reflow);
     this.isSubscribed = false;
     this.receiveQueue = [];
   }
@@ -132,19 +142,19 @@ module.exports = class Consumer {
       throw new PulsarFlexUnsubscribeError('Consumer is already unsubscribed.')
     }
     await services.unsubscribe({
-      cnx: this.client.getCnx(),
+      cnx: this._client.getCnx(),
       consumerId: this.consumerId,
       requestId: this._requestId++,
       responseMediator: this._requestIdMediator,
     });
-    this._consumerState = CONSUMER_STATES.UNSUBSCRIBED;
-    this.client.getCnx().close(); 
+    this._consumerState = STATES.UNSUBSCRIBED;
+    this._client.getCnx().close(); 
     this._cleanState();
   }
 
   _ack = ({ messageIdData, ackType }) => {
     return services.ack({
-      cnx: this.client.getCnx(),
+      cnx: this._client.getCnx(),
       consumerId: this.consumerId,
       messageIdData,
       ackType,
@@ -155,8 +165,8 @@ module.exports = class Consumer {
 
   run = async ({ onMessage = null, autoAck = true }) => {
     if (this.isSubscribed) {
-      this._consumerState = CONSUMER_STATES.ACTIVE;
-      this.client.getResponseEvents().on('message', this._reflow);
+      this._consumerState = STATES.ACTIVE;
+      this._client.getResponseEvents().on('message', this._reflow);
 
       const process = async () => {
         if (!this.isSubscribed) return;

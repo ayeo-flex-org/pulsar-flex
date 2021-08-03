@@ -2,6 +2,7 @@ const { Consumer } = require('../../src');
 const config = require('../config');
 const assert = require('assert');
 const utils = require('../utils');
+const sleep = require('../../src/utils/sleep')
 
 const { jwt, discoveryServers, topic , containerName} = config;
 
@@ -23,8 +24,36 @@ describe('Consumer tests', function () {
     if(cons.isSubscribed)
       await cons.unsubscribe();
   })
+  describe('Consumer Connection tests', function() {
+    it('should reconnect after unexpected connection loss', async function() {
+        await cons.subscribe();        
+        
+        // this test needs some 200iq logic.
+        await new Promise((resolve) => {
+          
+          // const waitForError = () => {
+          //   if(cons.getState() !== Consumer.CONSUMER_STATES.ERROR)
+          // }
+
+          // const waitForConnect = async () => {
+          //   //if(cons.getState() === Consumer.CONSUMER_STATES.ERROR){ 
+          //     await sleep(1000)
+          //     waitForConnect();
+          //   //}
+          //   //resolve();
+          // }
+          // // never do this
+          // cons._client.getCnx().close();
+          // console.log('closed conn')
+          // waitForConnect();
+          resolve();
+        });
+
+
+        
+    })
+  })
   it('should consume the messages successfully', async function () {
-    this.timeout(30000);
     try {
       await cons.subscribe();
       let expectedMessages = ['hello', 'world', 'goodbye'];
@@ -50,7 +79,6 @@ describe('Consumer tests', function () {
   });
   describe('Automatic Ack', function() {
     it('Should not re-consume the message', async function() {
-      this.timeout(30000)
       let firstMessage;
       let secondMessage;
       await cons.subscribe();
@@ -80,7 +108,6 @@ describe('Consumer tests', function () {
   });
   describe('Manual Ack', function() {
     it('Should re-consume message when auto ack is off', async function() {
-      this.timeout(30000);
       let firstMessage;
       let secondMessage;
       await cons.subscribe();
@@ -109,7 +136,6 @@ describe('Consumer tests', function () {
       assert.equal(firstMessage, secondMessage);
     })
     it('Should not re-consume message after manual ack', async function() { 
-      this.timeout(30000)
       let firstMessage;
       let secondMessage;
       await cons.subscribe();
@@ -140,7 +166,6 @@ describe('Consumer tests', function () {
       assert.notEqual(firstMessage, secondMessage);
     })
     it('Should not re-consume cumulatively acked message', async function() {
-      this.timeout(30000);
       const firstHalf = ['1', '2', '3'];
       const secondHalf = ['one', 'two', 'three'];
       let consumedFirstHalf = [];
