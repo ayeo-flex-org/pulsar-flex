@@ -12,11 +12,12 @@ const lookup = async ({
   reconnectionTimeMs,
   connectorService,
   connectorServiceResponseMediator,
+  logger,
 }) => {
   try {
     const [serviceHost, servicePort] = discoveryServers[index].split(':');
     const lookupCommand = commands.lookup({ topic, requestId });
-    const discoveryCnx = await connection({ host: serviceHost, port: servicePort });
+    const discoveryCnx = await connection({ host: serviceHost, port: servicePort, logger });
     await connectorService({
       cnx: discoveryCnx,
       jwt,
@@ -50,6 +51,7 @@ const lookup = async ({
                 connectorService,
                 reconnectionTimeMs,
                 connectorServiceResponseMediator,
+                logger,
                 index: 0,
               })
             ),
@@ -67,6 +69,7 @@ const lookup = async ({
       connectorService,
       reconnectionTimeMs,
       connectorServiceResponseMediator,
+      logger,
       index: index + 1,
     });
   }

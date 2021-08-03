@@ -7,7 +7,8 @@ const sendRequest = (request, nonSerializedData, socket, responseMediator, autoR
   return responseMediator.response({ data: nonSerializedData, autoResolve });
 };
 
-const connection = async ({ host, port }) => {
+const connection = async ({ host, port, logger }) => {
+  logger.debug(`connecting to ${host}:${port}`);
   const socket = await createSocket({
     host,
     port,
