@@ -4,6 +4,7 @@ const close = require('./close');
 const create = require('./create');
 const reconnect = require('./reconnect');
 const producerClose = require('./producerClose');
+const resendMessages = require('./resendMessages');
 
 const services = {
   close,
@@ -12,6 +13,7 @@ const services = {
   create,
   producerClose,
   reconnect,
+  resendMessages,
 };
 
 module.exports = services;

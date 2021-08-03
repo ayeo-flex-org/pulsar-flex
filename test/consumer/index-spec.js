@@ -38,7 +38,7 @@ describe('Consumer tests', function () {
                   messages.push(message);
                   if(messages.length >= expectedMessages.length) {
                       resolve()
-                  };
+                  }
               },
           })
       })
