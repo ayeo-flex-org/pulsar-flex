@@ -3,6 +3,8 @@ const services = require('./services');
 const Pulsar = require('../client');
 const { PulsarFlexNotSubscribedError, PulsarFlexSubscribeError, PulsarFlexUnsubscribeError } = require('../errors');
 const pulsarApi = require('../commands/protocol/pulsar/pulsar_pb');
+const { createLogger, LEVELS } = require('../logger');
+const defaultLogger = require('../logger/default');
 
 const SUB_TYPES = pulsarApi.CommandSubscribe.SubType;
 const ACK_TYPES = pulsarApi.CommandAck.AckType;
@@ -26,10 +28,14 @@ module.exports = class Consumer {
     readCompacted = false,
     receiveQueueSize = 500,
     reconnectInterval = 5000,
+    logLevel,
+    logCreator = defaultLogger,
   }) {
-    this._client = new Pulsar({
+    this._logger = createLogger({ logLevel, logCreator });
+    this.client = new Pulsar({
       discoveryServers,
       jwt,
+      logger: this._logger
     });
     this.topic = topic;
     this.subscription = subscription;

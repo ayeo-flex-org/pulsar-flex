@@ -1,15 +1,17 @@
 const Pulsar = require('../../src/client');
 const config = require('../config');
 const assert = require('assert');
-
+const { createLogger, LEVELS } = require('../../src/logger');
+const defaultLogger = require('../../src/logger/default');
 const { jwt, discoveryServers, topic } = config;
 
-describe('Client tests', function () {
-  describe('on correct config', function () {
-    it('should not throw exception', async function () {
+describe('Client tests', function() {
+  describe('on correct config', function() {
+    it('should not throw exception', async function() {
       const pulsar = new Pulsar({
         discoveryServers,
         jwt,
+        logger: createLogger({ logLevel: LEVELS.TRACE, logCreator: defaultLogger })
       });
 
       try {
@@ -21,11 +23,12 @@ describe('Client tests', function () {
       }
     });
   });
-  describe('on not existing topic', function () {
-    it('should not throw exception (for auto topic creation)', async function () {
+  describe('on not existing topic', function() {
+    it('should not throw exception (for auto topic creation)', async function() {
       const pulsar = new Pulsar({
         discoveryServers,
         jwt,
+        logger: createLogger({ logLevel: LEVELS.TRACE, logCreator: defaultLogger })
       });
 
       try {
@@ -37,11 +40,12 @@ describe('Client tests', function () {
       }
     });
   });
-  describe('on incorrect topic name', function () {
-    it('should throw PulsarFlexTopicLookupError exception', async function () {
+  describe('on incorrect topic name', function() {
+    it('should throw PulsarFlexTopicLookupError exception', async function() {
       const pulsar = new Pulsar({
         discoveryServers,
         jwt,
+        logger: createLogger({ logLevel: LEVELS.TRACE, logCreator: defaultLogger })
       });
 
       await assert.rejects(
@@ -50,15 +54,16 @@ describe('Client tests', function () {
         },
         {
           name: 'PulsarFlexTopicLookupError',
-        }
+        },
       );
     });
   });
-  describe('on incorrect jwt', function () {
-    it('should throw PulsarFlexConnectionError exception', async function () {
+  describe('on incorrect jwt', function() {
+    it('should throw PulsarFlexConnectionError exception', async function() {
       const pulsar = new Pulsar({
         discoveryServers,
         jwt: jwt + 'wrong',
+        logger: createLogger({ logLevel: LEVELS.TRACE, logCreator: defaultLogger })
       });
 
       await assert.rejects(
@@ -68,15 +73,16 @@ describe('Client tests', function () {
         {
           name: 'PulsarFlexConnectionError',
           message: 'Unable to authenticate',
-        }
+        },
       );
     });
   });
-  describe('on incorrect namespace', function () {
-    it('should throw PulsarFlexTopicLookupError exception', async function () {
+  describe('on incorrect namespace', function() {
+    it('should throw PulsarFlexTopicLookupError exception', async function() {
       const pulsar = new Pulsar({
         discoveryServers,
         jwt,
+        logger: createLogger({ logLevel: LEVELS.TRACE, logCreator: defaultLogger })
       });
 
       await assert.rejects(
@@ -85,12 +91,12 @@ describe('Client tests', function () {
         },
         {
           name: 'PulsarFlexTopicLookupError',
-        }
+        },
       );
     });
   });
-  describe('on not existent discoveryServers', function () {
-    it('should retry until succeeds', async function () {
+  describe('on not existent discoveryServers', function() {
+    it('should retry until succeeds', async function() {
       const pulsar = new Pulsar({
         discoveryServers: [
           'wronghost:1234',
@@ -99,6 +105,7 @@ describe('Client tests', function () {
           ...discoveryServers,
         ],
         jwt,
+        logger: createLogger({ logLevel: LEVELS.TRACE, logCreator: defaultLogger })
       });
 
       await pulsar.connect({ topic });
