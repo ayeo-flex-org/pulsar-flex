@@ -139,6 +139,7 @@ module.exports = class Consumer {
   };
 
   _cleanState = () => {
+    this._client.getResponseEvents().removeAllListeners()
     this._client.getResponseEvents().off('message', this._reflow);
     this.isSubscribed = false;
     this.receiveQueue = [];
