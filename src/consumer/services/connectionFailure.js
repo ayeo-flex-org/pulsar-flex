@@ -9,21 +9,7 @@ const connectionFailure = ({
   intervalMs,
   responseMediator,
 }) => {
-  // Handle forceful shutdowns
-  client.getCnx().addCleanUpListener(
-    async () =>
-      await reconnect({
-        client,
-        subscribe,
-        cleanState,
-        consumerState,
-        intervalMs,
-        responseMediator,
-        force: false,
-      })
-  );
-  // Handle graceful shutdown
-  client.getResponseEvents().once('closeConsumer', async () => {
+  const reconnectFunc = async () =>
     await reconnect({
       client,
       subscribe,
@@ -33,7 +19,11 @@ const connectionFailure = ({
       responseMediator,
       force: false,
     });
-  });
+  // Handle forceful shutdowns
+  client.getCnx().addCleanUpListener(reconnectFunc);
+  // Handle graceful shutdown
+  client.getResponseEvents().removeAllListeners('closeConsumer');
+  client.getResponseEvents().once('closeConsumer', reconnectFunc);
 };
 
 const reconnect = async ({
@@ -48,7 +38,7 @@ const reconnect = async ({
   if (
     (consumerState.get() !== consumerState.states.UNSUBSCRIBED &&
       consumerState.get() !== consumerState.states.RECONNECTING) ||
-    force
+    (force && consumerState.get() !== consumerState.states.UNSUBSCRIBED)
   ) {
     client.getCnx().close();
     responseMediator.purgeRequests({ error: errors.PulsarFlexConsumerCloseError });

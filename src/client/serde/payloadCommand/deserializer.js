@@ -49,7 +49,7 @@ const deserializer = (buffer) => {
 const deserializePayload = ({ metadata, buffer, isBatch }) => {
   let messages = [];
   if (isBatch) {
-    //mutating
+    // mutating
     batch.deserializer({ metadata, buffer, messages });
   } else {
     messages.push(buffer);

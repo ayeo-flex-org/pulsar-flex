@@ -13,23 +13,31 @@ const lookup = async ({
   connectorService,
   connectorServiceResponseMediator,
   logger,
+  emitter,
 }) => {
   try {
     const [serviceHost, servicePort] = discoveryServers[index].split(':');
     const lookupCommand = commands.lookup({ topic, requestId });
-    const discoveryCnx = await connection({ host: serviceHost, port: servicePort, logger });
+    const discoveryCnx = await connection({
+      host: serviceHost,
+      port: servicePort,
+      logger,
+      emitter,
+    });
     logger.info(
-      `connected succesfully ${serviceHost}:${servicePort}, now sending connect command.`
+      `Connected successfully ${serviceHost}:${servicePort}, now sending connect command.`
     );
     await connectorService({
       cnx: discoveryCnx,
       jwt,
       responseMediator: connectorServiceResponseMediator,
     });
+    logger.info(`Authentication to discovery service established, now will lookup topic`);
     const { command } = await discoveryCnx.sendSimpleCommandRequest(
       { command: lookupCommand },
       responseMediator
     );
+    logger.info(`Closing connection to discovery connection`);
     discoveryCnx.close();
     if (command.error) throw new errors.PulsarFlexTopicLookupError({ message: command.message });
     const [protocolName, hostPort] = command.brokerserviceurl.split('://');
@@ -39,8 +47,11 @@ const lookup = async ({
   } catch (e) {
     if ((e && e.name === 'PulsarFlexTopicLookupError') || e.name === 'PulsarFlexConnectionError')
       throw e;
-    console.warn('Could not connect', e);
+    logger.warn(
+      `Failed lookup topic on discovery server: ${discoveryServers[index]}, will try the next server until succeeds ${e}`
+    );
     if (index >= discoveryServers.length - 1) {
+      logger.info(`waiting ${reconnectionTimeMs}ms before iterating the list again`);
       return new Promise((resolve, reject) =>
         setTimeout(
           () =>
@@ -56,6 +67,7 @@ const lookup = async ({
                 connectorServiceResponseMediator,
                 logger,
                 index: 0,
+                emitter,
               })
             ),
           reconnectionTimeMs
@@ -74,6 +86,7 @@ const lookup = async ({
       connectorServiceResponseMediator,
       logger,
       index: index + 1,
+      emitter,
     });
   }
 };

@@ -48,20 +48,28 @@ class Producer {
     });
     this._pendingMessageQueue = [];
     this._maxPendingMessagesQueueSize = maxPendingMessagesQueueSize;
-    services.resendMessages(this._client, this._pendingMessageQueue);
+    services.resendMessages(this._client, this._pendingMessageQueue, this._logger);
   }
 
   _setConnected = (isConnected) => (this._connected = isConnected);
   create = async () => {
+    this._logger.info(`Creating producer to topic: ${this._topic}`);
+
     if (this._connected)
       throw new errors.PulsarFlexProducerCreationError({
         message: 'Already connected, please close before trying again',
       });
+    this._logger.info(`Creating client connection for producer to topic: ${this._topic}`);
+
     await this._client.connect({ topic: this._topic });
     await this._client.getCnx().addCleanUpListener(() => {
+      this._logger.warn(`Starting reconnection because socket ended unexpectedly`);
       this._connected = false;
       this._created && services.reconnect(this.create).then(() => (this._connected = true));
     });
+
+    this._logger.info(`Connected successfully will send command create topic: ${this._topic}`);
+
     const { command } = await services.create({
       topic: this._topic,
       requestId: this._requestId,
@@ -71,6 +79,9 @@ class Producer {
       responseMediator: this._createCloseResponseMediator,
       producerAccessMode: this._producerAccessMode,
     });
+
+    this._logger.info(`Created producer successfully to topic: ${this._topic}`);
+
     this._connected = true;
     this._created = true;
     const { producerName, lastSequenceId } = command;
@@ -81,6 +92,7 @@ class Producer {
   };
 
   close = async () => {
+    this._logger.info(`Closing producer to topic: ${this._topic}`);
     this._created = false;
     await services.close({
       connected: this._connected,
@@ -131,6 +143,10 @@ class Producer {
             }),
           resolve,
         });
+        this._logger.warn(
+          `Message have been inserted to pending queue, this log can be ignored if topic have been unloaded current queue size ${this._pendingMessageQueue.length}
+          error ${e}`
+        );
       });
     }
     this._sequenceId++;
@@ -141,6 +157,10 @@ class Producer {
     if (!this._created)
       throw new errors.PulsarFlexProducerSendError({
         message: 'Cannot send messages over not created producer',
+      });
+    if (utils.isNil(messages))
+      throw new errors.PulsarFlexProducerSendError({
+        message: 'Cannot send an empty batch, needs messages',
       });
     if (this._pendingMessageQueue.length === this._maxPendingMessagesQueueSize - 1)
       throw new errors.PulsarFlexProducerSendError({
@@ -157,7 +177,7 @@ class Producer {
       });
       if (!utils.isNil(command.error)) throw new errors.PulsarFlexProducerSendError(command.error);
     } catch (e) {
-      if (e.name !== 'PulsarFlexProducerSendError') throw e;
+      if (e.name === 'PulsarFlexProducerSendError') throw e;
       await new Promise(async (resolve, reject) => {
         this._pendingMessageQueue.push({
           func: () =>
@@ -171,6 +191,10 @@ class Producer {
             }),
           resolve,
         });
+        this._logger.warn(
+          `Batch have been inserted to pending queue, this log can be ignored if topic have been unloaded current queue size ${this._pendingMessageQueue.length}
+          error: ${e}`
+        );
       });
     }
     this._sequenceId++;
