@@ -65,19 +65,19 @@ describe('Producer tests', function () {
   });
   describe('on creating multiple shared producers', function () {
     it('should not throw exception', async function () {
+       const firstProducer = new Producer({
+          discoveryServers,
+          jwt,
+          topic,
+          producerAccessMode: Producer.ACCESS_MODES.SHARED,
+        });
+       const secondProducer = new Producer({
+          discoveryServers,
+          jwt,
+          topic,
+          producerAccessMode: Producer.ACCESS_MODES.SHARED,
+        });
       try {
-        const firstProducer = new Producer({
-          discoveryServers,
-          jwt,
-          topic,
-          producerAccessMode: Producer.ACCESS_MODES.SHARED,
-        });
-        const secondProducer = new Producer({
-          discoveryServers,
-          jwt,
-          topic,
-          producerAccessMode: Producer.ACCESS_MODES.SHARED,
-        });
         await firstProducer.create();
         await secondProducer.create();
         await firstProducer.sendMessage({
@@ -243,7 +243,7 @@ describe('Producer tests', function () {
         topicName: topic,
       });
       await utils.deleteTopic({ topicName: topic });
-      assert(message.includes('key:[null], properties:[sinai=noob], content:galrose'));
+      assert(JSON.stringify(message).includes('key:[null], properties:[sinai=noob], content:galrose'));
     });
   });
 });

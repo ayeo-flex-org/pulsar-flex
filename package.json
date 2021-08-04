@@ -9,7 +9,7 @@
     "test": "mocha --recursive --timeout 20000 --exit test/",
     "test-without-setup": "mocha --recursive --exit test/",
     "test-consumer": "mocha test/consumer/index-spec.js --exit",
-    "test-producer": "mocha test/producer/index-spec.js --timeout 20000 --exit",
+    "test-producer": "mocha test/producer/index-spec.js --timeout 60000 --exit",
     "interact": "scripts/docker exec -it pulsar /bin/bash"
   },
   "devDependencies": {
