@@ -226,6 +226,10 @@ describe('Producer tests', function () {
   });
   describe('on sending message should contain payload and properties', function () {
     it('should not throw exception', async function () {
+      const topic = 'public/default/testSendMessage';
+      const subscriptionName = 'test';
+      await utils.createTopic({ topicName: topic });
+      await utils.createSubscription({ topicName: topic, subscriptionName });
       const producer = new Producer({
         discoveryServers,
         jwt,
@@ -233,7 +237,9 @@ describe('Producer tests', function () {
       });
       await producer.create();
       await producer.sendMessage({ payload: 'galrose', properties: { sinai: 'noob' } });
-      const message = await utils.consumeMessage({ numberOfMessages: 1 });
+      const message = await utils.consumeMessage({ numberOfMessages: 1, subscriptionName });
+      console.log(message);
+      await utils.deleteTopic({ topicName: topic });
     });
   });
 });
