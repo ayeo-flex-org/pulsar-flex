@@ -24,7 +24,6 @@ const connectionFailure = ({
   // Handle graceful shutdown
   client.getResponseEvents().removeAllListeners('closeConsumer');
   client.getResponseEvents().once('closeConsumer', reconnectFunc);
-  console.log(client.getResponseEvents().listenerCount('closeConsumer'));
 };
 
 const reconnect = async ({

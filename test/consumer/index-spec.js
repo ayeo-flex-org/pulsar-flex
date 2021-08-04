@@ -105,38 +105,6 @@ describe('Consumer tests', function () {
       assert.deepEqual(messages, expectedMessages);
     });   
   })
-  describe('Automatic Ack', function() {
-    it('Should not re-consume the message', async function() {
-      const expectedFirstMessage = 'hello';
-      const expectedSecondMessage = 'goodbye';
-      let firstMessage;
-      let secondMessage;
-      await cons.subscribe();
-      await utils.produceMessages({messages: [expectedFirstMessage]})
-      await new Promise((resolve, reject) => {
-        cons.run({
-            onMessage: async ({ ack, message }) => {
-                firstMessage = message;
-                await cons.unsubscribe();
-                resolve();
-            },
-        })
-      })
-      await utils.produceMessages({messages: [expectedSecondMessage]})
-      await cons.subscribe();
-      await new Promise((resolve, reject) => {
-        cons.run({
-            onMessage: async ({ ack, message }) => {
-              secondMessage = message;
-              await cons.unsubscribe();
-              resolve();
-            },
-        })
-      })
-      assert.equal(firstMessage, expectedFirstMessage);
-      assert.equal(secondMessage, expectedSecondMessage)
-    });
-  });
   describe('Manual Ack', function() {
     it('Should re-consume message when auto ack is off', async function() {
       let firstMessage;
@@ -243,4 +211,37 @@ describe('Consumer tests', function () {
 
     })
   });
+  describe('Automatic Ack', function() {
+    it('Should not re-consume the message', async function() {
+      const expectedFirstMessage = 'hello';
+      const expectedSecondMessage = 'goodbye';
+      let firstMessage;
+      let secondMessage;
+      await cons.subscribe();
+      await utils.produceMessages({messages: [expectedFirstMessage]})
+      await new Promise((resolve, reject) => {
+        cons.run({
+            onMessage: async ({ ack, message }) => {
+                firstMessage = message;
+                await cons.unsubscribe();
+                resolve();
+            },
+        })
+      })
+      await utils.produceMessages({messages: [expectedSecondMessage]})
+      await cons.subscribe();
+      await new Promise((resolve, reject) => {
+        cons.run({
+            onMessage: async ({ ack, message }) => {
+              secondMessage = message;
+              await cons.unsubscribe();
+              resolve();
+            },
+        })
+      })
+      assert.equal(firstMessage, expectedFirstMessage);
+      assert.equal(secondMessage, expectedSecondMessage)
+    });
+  });
+  
 });

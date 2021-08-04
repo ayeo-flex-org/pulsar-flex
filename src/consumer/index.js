@@ -97,7 +97,7 @@ module.exports = class Consumer {
     if(this.isSubscribed) {
       throw new PulsarFlexSubscribeError('Consumer is already subscribed.')
     }
-    this._logger.info(`Creating client connection for consumer: ${this.consumerName} with id: ${this.consumerId}`)
+    this._logger.info(`Creating client connection for consumer: ${this.consumerName}(${this.consumerId})`)
     await this._client.connect({ topic: this.topic });
 
     // Handles forceful & graceful shutdowns.
@@ -114,7 +114,7 @@ module.exports = class Consumer {
       intervalMs: this.reconnectInterval,
       responseMediator: this._requestIdMediator,
     })
-    this._logger.info(`consumer: ${this.consumerName} id: ${this.consumerId} subscribing to topic: ${this.topic} with subscription: ${this.subscription} request id: ${this._requestId}`)
+    this._logger.info(`request id: ${this._requestId} consumer: ${this.consumerName}(${this.consumerId}) subscribing topic: ${this.topic} subscription: ${this.subscription}`)
     await services.subscribe({
       cnx: this._client.getCnx(),
       topic: this.topic,
@@ -142,7 +142,7 @@ module.exports = class Consumer {
 
   _setState = (state) => {
     this._consumerState = state;
-    this._logger.info(`Changing consumer state -> consumer: ${this.consumerName} id: ${this.consumerId} STATE: ${this.getState()}`)
+    this._logger.info(`Changing consumer state -> consumer: ${this.consumerName}(${this.consumerId}) STATE: ${this.getState()}`)
   }
 
   _flow = async (flowAmount) => {
@@ -164,7 +164,7 @@ module.exports = class Consumer {
     if(!this.isSubscribed) {
       throw new PulsarFlexUnsubscribeError('Consumer is already unsubscribed.')
     }
-    this._logger.info(`consumer: ${this.consumerName} id: ${this.consumerId} unsubscribing to topic: ${this.topic} with subscription: ${this.subscription} request id: ${this._requestId}`)
+    this._logger.info(`request id: ${this._requestId} consumer: ${this.consumerName}(${this.consumerId}) unsubscribing topic: ${this.topic} subscription: ${this.subscription}`)
     await services.unsubscribe({
       cnx: this._client.getCnx(),
       consumerId: this.consumerId,
@@ -172,7 +172,7 @@ module.exports = class Consumer {
       responseMediator: this._requestIdMediator,
     });
     this._setState(STATES.UNSUBSCRIBED);
-    this._logger.info(`Closing client connection for consumer: ${this.consumerName} id: ${this.consumerId}`)
+    this._logger.info(`Closing client connection for consumer: ${this.consumerName}(${this.consumerId})`)
     this._client.getCnx().close(); 
     this._cleanState();
   }
@@ -189,6 +189,7 @@ module.exports = class Consumer {
       });
     }
     catch (e) {
+      console.log(e);
       await new Promise((resolve, reject) => {
         console.log('sent to redeliver');
         this._redeliverAcksQueue.push({
