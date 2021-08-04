@@ -38,14 +38,13 @@ const reconnect = async ({
   if (
     (consumerState.get() !== consumerState.states.UNSUBSCRIBED &&
       consumerState.get() !== consumerState.states.RECONNECTING) ||
-    force
+    (force && consumerState.get() !== consumerState.states.UNSUBSCRIBED)
   ) {
     client.getCnx().close();
     responseMediator.purgeRequests({ error: errors.PulsarFlexConsumerCloseError });
     consumerState.set(consumerState.states.RECONNECTING);
     cleanState();
     subscribe().catch(async (e) => {
-      console.log(e);
       await utils.sleep(intervalMs);
       await reconnect({
         client,

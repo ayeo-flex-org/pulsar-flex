@@ -62,7 +62,7 @@ module.exports = class Consumer {
     });
     this.noId = new responseMediators.NoIdResponseMediator({
       client: this._client,
-      commands: ['message'],
+      commands: [],
     });
 
     this.isSubscribed = false;
@@ -171,16 +171,16 @@ module.exports = class Consumer {
       requestId: this._requestId++,
       responseMediator: this._requestIdMediator,
     });
+    this._client.getCnx().close();
     this._setState(STATES.UNSUBSCRIBED);
     this._logger.info(`Closing client connection for consumer: ${this.consumerName}(${this.consumerId})`)
-    this._client.getCnx().close(); 
     this._cleanState();
   }
 
   _ack = async ({ messageIdData, ackType }) => {
     try {
       return await services.ack({
-        cnx: this._client.getCnx(),
+        client: this._client,
         consumerId: this.consumerId,
         messageIdData,
         ackType,
@@ -189,12 +189,10 @@ module.exports = class Consumer {
       });
     }
     catch (e) {
-      console.log(e);
       await new Promise((resolve, reject) => {
-        console.log('sent to redeliver');
         this._redeliverAcksQueue.push({
           func: () => services.ack({
-            cnx: this._client.getCnx(),
+            client: this._client,
             consumerId: this.consumerId,
             messageIdData,
             ackType,
@@ -202,6 +200,7 @@ module.exports = class Consumer {
             responseMediator: this._requestIdMediator,
           }),
           resolve,
+          messageIdData,
         })
       })
     }
@@ -214,26 +213,35 @@ module.exports = class Consumer {
       this._client.getResponseEvents().on('message', this._reflow);
 
       const process = async () => {
-        if (!this.isSubscribed) return;
-        const message = this.receiveQueue.shift();
-        if (autoAck) {
-          await this._ack({
-            messageIdData: message.command.messageId,
-            ackType: ACK_TYPES.INDIVIDUAL,
+        if (!this.isSubscribed){
+          return;
+        }
+        if(this.receiveQueue.length <= 0) {
+          await new Promise((resolve, reject) => {
+            setTimeout(async () => {
+              if(!this.isSubscribed)
+                await process();
+              resolve();
+            }, 1000);
           });
         }
-        await onMessage({
-          message: message.payload.toString(),
-          metadata: message.metadata,
-          command: message.command,
-          ack: (options={}) => this._ack({  messageIdData: message.command.messageId, ackType: options.type ? options.type : ACK_TYPES.INDIVIDUAL}),
-        });
-        if (this.receiveQueue.length > 0) process();
-        else setTimeout(process, 1000);
+        const message = this.receiveQueue.shift();
+          if (autoAck) {
+            await this._ack({
+              messageIdData: message.command.messageId,
+              ackType: ACK_TYPES.INDIVIDUAL,
+            });
+          }
+          await onMessage({
+            message: message.payload.toString(),
+            metadata: message.metadata,
+            command: message.command,
+            ack: (options={}) => this._ack({  messageIdData: message.command.messageId, ackType: options.type ? options.type : ACK_TYPES.INDIVIDUAL}),
+          });
+        await process();
       };
-
       await this._flow(this.receiveQueueSize);
-      process();
+      await process();
     } else {
       throw new PulsarFlexNotSubscribedError(
         'You must be subscribed to the topic in order to start consuming messages.'

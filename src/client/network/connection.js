@@ -1,9 +1,11 @@
 const createSocket = require('./socket/socket');
 const resolver = require('../resolver');
 const serde = require('../serde');
-const { PulsarFlexSocketError } = require('../../errors');
 
 const sendRequest = (request, nonSerializedData, socket, responseMediator, autoResolve) => {
+  if (socket.readyState !== 'open') {
+    throw Error('Socket closed.');
+  }
   socket.write(request, 'binary');
   return responseMediator.response({ data: nonSerializedData, autoResolve });
 };

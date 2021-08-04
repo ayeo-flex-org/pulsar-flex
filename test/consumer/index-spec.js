@@ -17,14 +17,16 @@ describe('Consumer tests', function () {
     consumerName: 'Consy',
     readCompacted: false,
     receiveQueueSize: 1000,
-    logLevel: LEVELS.INFO,
+    logLevel: LEVELS.WARN,
   })
   beforeEach(async function() {
     await utils.clearBacklog();
   })
   afterEach(async function() {
-    if(cons.isSubscribed)
-      await cons.unsubscribe();
+    if(cons.isSubscribed) {
+        await cons.unsubscribe();
+    }
+    console.log('#####################################')
   })
   it('should consume the messages successfully', async function () {
     try {
@@ -36,6 +38,7 @@ describe('Consumer tests', function () {
       await new Promise((resolve, reject) => {
           cons.run({
               onMessage: ({ ack, message }) => {
+                  console.log(message);
                   messages.push(message);
                   if(messages.length >= expectedMessages.length) {
                       resolve()
@@ -45,7 +48,7 @@ describe('Consumer tests', function () {
       })
       assert.deepEqual(messages, expectedMessages);
       
-  } catch (e) {
+    } catch (e) {
       console.log(e);
       assert.ok(false);
     }
@@ -77,6 +80,7 @@ describe('Consumer tests', function () {
           cons.run({
               onMessage: async ({ ack, message }) => {
                 msgCounter++;
+                console.log(message, 'AAAAAAAAAAAAAAAa')
                 cons._client.getCnx().close();
                 await ack();
                 if(msgCounter >= 3)
@@ -94,6 +98,7 @@ describe('Consumer tests', function () {
       await new Promise((resolve, reject) => {
         cons.run({
             onMessage: async ({ ack, message }) => {
+              console.log(message, cons.getState())
               msgCounter++;
               messages.push(message);
               if(msgCounter >= 3)
@@ -115,9 +120,7 @@ describe('Consumer tests', function () {
         cons.run({
             onMessage: async ({ ack, message }) => {
               firstMessage = message;
-              console.log(message, 'first message#####');
               await cons.unsubscribe();
-              console.log('unsubbed first message#####')
               resolve();
             },
             autoAck: false,
@@ -128,9 +131,7 @@ describe('Consumer tests', function () {
         cons.run({
             onMessage: async ({ ack, message }) => {
               secondMessage = message;
-              console.log(message, 'second message#####');
               await cons.unsubscribe();
-              console.log('unsubbed first message#####')
               resolve();
             },
             autoAck: false,
@@ -138,7 +139,7 @@ describe('Consumer tests', function () {
       })
       assert.equal(firstMessage, secondMessage);
     })
-    it('Should not re-consume message after manual ack', async function() { 
+    it('Should not re-consume message after manual ack', async function() {
       let firstMessage;
       let secondMessage;
       await cons.subscribe();

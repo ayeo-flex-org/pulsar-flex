@@ -48,8 +48,7 @@ const lookup = async ({
     if ((e && e.name === 'PulsarFlexTopicLookupError') || e.name === 'PulsarFlexConnectionError')
       throw e;
     logger.warn(
-      `Failed lookup topic on discovery server: ${discoveryServers[index]}, will try the next server until succeeds`,
-      e
+      `Failed lookup topic on discovery server: ${discoveryServers[index]}, will try the next server until succeeds ${e}`
     );
     if (index >= discoveryServers.length - 1) {
       logger.info(`waiting ${reconnectionTimeMs}ms before iterating the list again`);
