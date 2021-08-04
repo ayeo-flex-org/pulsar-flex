@@ -242,8 +242,8 @@ describe('Producer tests', function () {
         subscriptionName,
         topicName: topic,
       });
-      console.log(message);
       await utils.deleteTopic({ topicName: topic });
+      assert(message.includes('key:[null], properties:[sinai=noob], content:galrose'));
     });
   });
 });
