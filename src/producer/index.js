@@ -138,9 +138,14 @@ class Producer {
   };
 
   sendBatch = async ({ messages }) => {
+    console.log(messages);
     if (!this._created)
       throw new errors.PulsarFlexProducerSendError({
         message: 'Cannot send messages over not created producer',
+      });
+    if (utils.isNil(messages))
+      throw new errors.PulsarFlexProducerSendError({
+        message: 'Cannot send an empty batch, needs messages',
       });
     if (this._pendingMessageQueue.length === this._maxPendingMessagesQueueSize - 1)
       throw new errors.PulsarFlexProducerSendError({
@@ -157,7 +162,7 @@ class Producer {
       });
       if (!utils.isNil(command.error)) throw new errors.PulsarFlexProducerSendError(command.error);
     } catch (e) {
-      if (e.name !== 'PulsarFlexProducerSendError') throw e;
+      if (e.name === 'PulsarFlexProducerSendError') throw e;
       await new Promise(async (resolve, reject) => {
         this._pendingMessageQueue.push({
           func: () =>
