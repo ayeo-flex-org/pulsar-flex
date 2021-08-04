@@ -150,16 +150,14 @@ describe('Producer tests', function () {
       });
       try {
         await firstProducer.create();
-        let unloaded = false;
-        utils.unloadTopic().then(() => (unloaded = true));
-        let i = 0;
-        while (i < 2) {
-          await firstProducer.sendMessage({
-            payload: 'asdf',
-            properties: { k: 'v' },
-          });
-          unloaded && i++;
-        }
+        await new Promise((resolve, reject) => {
+          producer
+            .sendMessage({ payload: 'sinai', properties: { k: 'v' } })
+            .then(resolve)
+            .catch(reject);
+          const emitter = producer._client.getResponseEvents();
+          setImmediate(() => emitter.emit('producerClose', { command: { requestId: 1 } }));
+        });
         await firstProducer.close();
         assert.ok(true);
       } catch (e) {
@@ -229,6 +227,19 @@ describe('Producer tests', function () {
         const emitter = producer._client.getResponseEvents();
         setImmediate(() => emitter.emit('producerSuccess', { command: { requestId: 1 } }));
       });
+    });
+  });
+  describe('on sending message should contain payload and properties', function () {
+    it('should not throw exception', async function () {
+      const producer = new Producer({
+        discoveryServers,
+        jwt,
+        topic,
+      });
+      await producer.create();
+      await producer.sendMessage({ payload: 'galrose', properties: { sinai: 'noob' } });
+      const message = await utils.consumeMessage({ numberOfMessages: 1 });
+      console.log(message);
     });
   });
 });
