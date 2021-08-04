@@ -18,7 +18,6 @@ describe('Producer tests', function () {
         await producer.close();
         assert.ok(true);
       } catch (e) {
-        console.log(e);
         assert.ok(false);
       }
     });
@@ -96,7 +95,6 @@ describe('Producer tests', function () {
       } catch (e) {
         await firstProducer.close();
         await secondProducer.close();
-        console.log(e);
         assert.ok(false);
       }
     });
@@ -118,38 +116,34 @@ describe('Producer tests', function () {
       try {
         await firstProducer.create();
         await secondProducer.create();
-        console.log('created both');
         await firstProducer.sendMessage({
           payload: 'asdf',
           properties: { k: 'v' },
         });
         await firstProducer.close();
-        console.log('closed first');
         await utils.sleep(1000);
         await secondProducer.sendMessage({
           payload: 'asdf',
           properties: { k: 'v' },
         });
-        console.log('sent second');
         await secondProducer.close();
         assert.ok(true);
       } catch (e) {
         await firstProducer.close();
         await secondProducer.close();
-        console.log(e);
         assert.ok(false);
       }
     });
   });
   describe('on producerClose the producer continues sending messages', function () {
     it('should not throw exception', async function () {
-      const firstProducer = new Producer({
+      const producer = new Producer({
         discoveryServers,
         jwt,
         topic,
       });
       try {
-        await firstProducer.create();
+        await producer.create();
         await new Promise((resolve, reject) => {
           producer
             .sendMessage({ payload: 'sinai', properties: { k: 'v' } })
@@ -158,11 +152,10 @@ describe('Producer tests', function () {
           const emitter = producer._client.getResponseEvents();
           setImmediate(() => emitter.emit('producerClose', { command: { requestId: 1 } }));
         });
-        await firstProducer.close();
+        await producer.close();
         assert.ok(true);
       } catch (e) {
         await firstProducer.close();
-        console.log(e);
         assert.ok(false);
       }
     });
@@ -220,12 +213,12 @@ describe('Producer tests', function () {
       };
       await new Promise((resolve, reject) => {
         producer
-          .sendBatch({ payload: 'sinai', properties: { k: 'v' } })
+          .sendBatch({ messages: [{ payload: 'sinai', properties: { k: 'v' } }] })
           .then(resolve)
           .catch(reject);
         producer._client._cnx = goodClient;
         const emitter = producer._client.getResponseEvents();
-        setImmediate(() => emitter.emit('producerSuccess', { command: { requestId: 1 } }));
+        setImmediate(() => emitter.emit('producerSuccess', { command: { requestId: 2 } }));
       });
     });
   });
@@ -239,7 +232,6 @@ describe('Producer tests', function () {
       await producer.create();
       await producer.sendMessage({ payload: 'galrose', properties: { sinai: 'noob' } });
       const message = await utils.consumeMessage({ numberOfMessages: 1 });
-      console.log(message);
     });
   });
 });
