@@ -5,8 +5,8 @@
   "main": "src/index.js",
   "scripts": {
     "pretest": "npm run test-setup",
-    "test-setup": "node ./scripts/test-setup.js 2.8.0 120000",
-    "test": "mocha --recursive --timeout 20000 --exit test/",
+    "test-setup": "node ./scripts/test-setup.js 2.8.0 60000",
+    "test": "mocha --recursive --timeout 60000 --exit test/",
     "test-without-setup": "mocha --recursive --exit test/",
     "test-consumer": "mocha test/consumer/index-spec.js --exit",
     "test-producer": "mocha test/producer/index-spec.js --timeout 60000 --exit",
