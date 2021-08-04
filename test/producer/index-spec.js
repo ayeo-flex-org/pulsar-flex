@@ -189,6 +189,7 @@ describe('Producer tests', function () {
         const emitter = producer._client.getResponseEvents();
         setImmediate(() => emitter.emit('producerSuccess', { command: { requestId: 1 } }));
       });
+      await producer.close();
     });
   });
   describe('on connection exception should resend batch', function () {
@@ -220,6 +221,7 @@ describe('Producer tests', function () {
         const emitter = producer._client.getResponseEvents();
         setImmediate(() => emitter.emit('producerSuccess', { command: { requestId: 2 } }));
       });
+      await producer.close();
     });
   });
   describe('on sending message should contain payload and properties', function () {
