@@ -102,7 +102,7 @@ const run = async () => {
       console.log({
         message,
       })
-    }, autoAck: false, // specify true in order to 
+    }, autoAck: false, // specify true in order to use automaticAck
   });
 }
 
