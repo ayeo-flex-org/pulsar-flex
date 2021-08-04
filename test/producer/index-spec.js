@@ -155,7 +155,7 @@ describe('Producer tests', function () {
         await producer.close();
         assert.ok(true);
       } catch (e) {
-        await firstProducer.close();
+        await producer.close();
         assert.ok(false);
       }
     });
@@ -237,7 +237,11 @@ describe('Producer tests', function () {
       });
       await producer.create();
       await producer.sendMessage({ payload: 'galrose', properties: { sinai: 'noob' } });
-      const message = await utils.consumeMessage({ numberOfMessages: 1, subscriptionName });
+      const message = await utils.consumeMessage({
+        numberOfMessages: 1,
+        subscriptionName,
+        topicName: topic,
+      });
       console.log(message);
       await utils.deleteTopic({ topicName: topic });
     });
