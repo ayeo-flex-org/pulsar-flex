@@ -23,8 +23,8 @@ A clear and concise description of what *did* happen. Please include any relevan
 
 **Environment:**
 - OS: [e.g. Mac OS 10.15.3]
-- KafkaJS version [e.g. 1.12.0]
-- Kafka version [e.g. 2.3.1]
+- PulsarFlex version [e.g. 1.12.0]
+- Pulsar version [e.g. 2.3.1]
 - NodeJS version [e.g. 10.13.0]
 
 **Additional context**
