@@ -3,8 +3,7 @@ const config = require('../config');
 
 const { topic, containerName } = config;
 
-const produceMsgs = async ({ messages }) => {
-  // ESLint should not do this VVVVVVVVVVVVVVV
+const produceMessages = async ({ messages }) => {
   await asyncExec(
     `docker exec ${containerName} /pulsar/bin/pulsar-client produce -m ${messages.join(
       ','
@@ -12,4 +11,4 @@ const produceMsgs = async ({ messages }) => {
   );
 };
 
-module.exports = produceMsgs;
+module.exports = produceMessages;

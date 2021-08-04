@@ -32,7 +32,7 @@ describe('Consumer tests', function () {
       let expectedMessages = ['hello', 'world', 'goodbye'];
       let messages = [];
       
-      await utils.produceMsgs({messages: expectedMessages});
+      await utils.produceMessages({messages: expectedMessages});
       await new Promise((resolve, reject) => {
           cons.run({
               onMessage: ({ ack, message }) => {
@@ -55,7 +55,7 @@ describe('Consumer tests', function () {
       await cons.subscribe();
       console.log('subscribed');
       let msgCounter = 0;
-      await utils.produceMsgs({messages: ['hello', 'goodbye']});
+      await utils.produceMessages({messages: ['hello', 'goodbye']});
       await new Promise((resolve, reject) => {
           cons.run({
               onMessage: async ({ ack, message }) => {
@@ -76,7 +76,7 @@ describe('Consumer tests', function () {
       let firstMessage;
       let secondMessage;
       await cons.subscribe();
-      await utils.produceMsgs({messages: ['hello']})
+      await utils.produceMessages({messages: ['hello']})
       await new Promise((resolve, reject) => {
         cons.run({
             onMessage: async ({ ack, message }) => {
@@ -86,7 +86,7 @@ describe('Consumer tests', function () {
             },
         })
       })
-      await utils.produceMsgs({messages: ['goodbye']})
+      await utils.produceMessages({messages: ['goodbye']})
       await cons.subscribe();
       await new Promise((resolve, reject) => {
         cons.run({
@@ -105,7 +105,7 @@ describe('Consumer tests', function () {
       let firstMessage;
       let secondMessage;
       await cons.subscribe();
-      await utils.produceMsgs({messages: ['hello']})
+      await utils.produceMessages({messages: ['hello']})
       await new Promise((resolve, reject) => {
         cons.run({
             onMessage: async ({ ack, message }) => {
@@ -133,7 +133,7 @@ describe('Consumer tests', function () {
       let firstMessage;
       let secondMessage;
       await cons.subscribe();
-      await utils.produceMsgs({messages: ['bloo', 'blah']});
+      await utils.produceMessages({messages: ['bloo', 'blah']});
       await new Promise((resolve, reject) => {
         cons.run({
             onMessage: async ({ ack, message, test }) => {
@@ -165,7 +165,7 @@ describe('Consumer tests', function () {
       let consumedFirstHalf = [];
       let msgCounter = 0;
       await cons.subscribe();
-      await utils.produceMsgs( {messages: [...firstHalf, ...secondHalf] })
+      await utils.produceMessages( {messages: [...firstHalf, ...secondHalf] })
       await new Promise((resolve, reject) => {
         cons.run({
             onMessage: async ({ ack, message, test }) => {
