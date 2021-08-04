@@ -18,7 +18,6 @@ describe('Producer tests', function () {
         await producer.close();
         assert.ok(true);
       } catch (e) {
-        console.log(e);
         assert.ok(false);
       }
     });
@@ -66,19 +65,19 @@ describe('Producer tests', function () {
   });
   describe('on creating multiple shared producers', function () {
     it('should not throw exception', async function () {
+       const firstProducer = new Producer({
+          discoveryServers,
+          jwt,
+          topic,
+          producerAccessMode: Producer.ACCESS_MODES.SHARED,
+        });
+       const secondProducer = new Producer({
+          discoveryServers,
+          jwt,
+          topic,
+          producerAccessMode: Producer.ACCESS_MODES.SHARED,
+        });
       try {
-        const firstProducer = new Producer({
-          discoveryServers,
-          jwt,
-          topic,
-          producerAccessMode: Producer.ACCESS_MODES.SHARED,
-        });
-        const secondProducer = new Producer({
-          discoveryServers,
-          jwt,
-          topic,
-          producerAccessMode: Producer.ACCESS_MODES.SHARED,
-        });
         await firstProducer.create();
         await secondProducer.create();
         await firstProducer.sendMessage({
@@ -96,7 +95,6 @@ describe('Producer tests', function () {
       } catch (e) {
         await firstProducer.close();
         await secondProducer.close();
-        console.log(e);
         assert.ok(false);
       }
     });
@@ -118,53 +116,46 @@ describe('Producer tests', function () {
       try {
         await firstProducer.create();
         await secondProducer.create();
-        console.log('created both');
         await firstProducer.sendMessage({
           payload: 'asdf',
           properties: { k: 'v' },
         });
         await firstProducer.close();
-        console.log('closed first');
         await utils.sleep(1000);
         await secondProducer.sendMessage({
           payload: 'asdf',
           properties: { k: 'v' },
         });
-        console.log('sent second');
         await secondProducer.close();
         assert.ok(true);
       } catch (e) {
         await firstProducer.close();
         await secondProducer.close();
-        console.log(e);
         assert.ok(false);
       }
     });
   });
   describe('on producerClose the producer continues sending messages', function () {
     it('should not throw exception', async function () {
-      const firstProducer = new Producer({
+      const producer = new Producer({
         discoveryServers,
         jwt,
         topic,
       });
       try {
-        await firstProducer.create();
-        let unloaded = false;
-        utils.unloadTopic().then(() => (unloaded = true));
-        let i = 0;
-        while (i < 2) {
-          await firstProducer.sendMessage({
-            payload: 'asdf',
-            properties: { k: 'v' },
-          });
-          unloaded && i++;
-        }
-        await firstProducer.close();
+        await producer.create();
+        await new Promise((resolve, reject) => {
+          producer
+            .sendMessage({ payload: 'sinai', properties: { k: 'v' } })
+            .then(resolve)
+            .catch(reject);
+          const emitter = producer._client.getResponseEvents();
+          setImmediate(() => emitter.emit('producerClose', { command: { requestId: 1 } }));
+        });
+        await producer.close();
         assert.ok(true);
       } catch (e) {
-        await firstProducer.close();
-        console.log(e);
+        await producer.close();
         assert.ok(false);
       }
     });
@@ -198,6 +189,7 @@ describe('Producer tests', function () {
         const emitter = producer._client.getResponseEvents();
         setImmediate(() => emitter.emit('producerSuccess', { command: { requestId: 1 } }));
       });
+      await producer.close();
     });
   });
   describe('on connection exception should resend batch', function () {
@@ -222,13 +214,36 @@ describe('Producer tests', function () {
       };
       await new Promise((resolve, reject) => {
         producer
-          .sendBatch({ payload: 'sinai', properties: { k: 'v' } })
+          .sendBatch({ messages: [{ payload: 'sinai', properties: { k: 'v' } }] })
           .then(resolve)
           .catch(reject);
         producer._client._cnx = goodClient;
         const emitter = producer._client.getResponseEvents();
-        setImmediate(() => emitter.emit('producerSuccess', { command: { requestId: 1 } }));
+        setImmediate(() => emitter.emit('producerSuccess', { command: { requestId: 2 } }));
       });
+      await producer.close();
+    });
+  });
+  describe('on sending message should contain payload and properties', function () {
+    it('should not throw exception', async function () {
+      const topic = 'public/default/testSendMessage';
+      const subscriptionName = 'test';
+      await utils.createTopic({ topicName: topic });
+      await utils.createSubscription({ topicName: topic, subscriptionName });
+      const producer = new Producer({
+        discoveryServers,
+        jwt,
+        topic,
+      });
+      await producer.create();
+      await producer.sendMessage({ payload: 'galrose', properties: { sinai: 'noob' } });
+      const message = await utils.consumeMessage({
+        numberOfMessages: 1,
+        subscriptionName,
+        topicName: topic,
+      });
+      await utils.deleteTopic({ topicName: topic });
+      assert(JSON.stringify(message).includes('key:[null], properties:[sinai=noob], content:galrose'));
     });
   });
 });
