@@ -13,6 +13,7 @@ class Client {
     this._cnx = null;
     this._responseMediator = null;
     this._requestIdResponseMediator = null;
+    this._emitter = new emitter.data();
     this._initMediators();
   }
 
@@ -41,17 +42,21 @@ class Client {
       connectorServiceResponseMediator: this._responseMediator,
       reconnectionTimeMs: this._circularReconnectionMs,
       logger: this._logger,
+      emitter: this._emitter,
     });
 
     this._logger.info(`Lookup succeeded, owner is ${host}:${port}`);
 
-    this._cnx = await connection({ host, port, logger: this._logger });
+    this._cnx = await connection({ host, port, logger: this._logger, emitter: this._emitter });
     await services.connector({
       cnx: this._cnx,
       responseMediator: this._responseMediator,
       jwt: this._jwt,
       logger: this._logger,
     });
+
+    this._logger.info(`Setting up keep alive services`);
+
     const cleanUpPinger = services.pinger({
       cnx: this._cnx,
       pingingIntervalMs: 60000,
@@ -62,6 +67,7 @@ class Client {
       cnx: this._cnx,
       responseMediator: this._responseMediator,
       logger: this._logger,
+      emitter: this._emitter,
     });
 
     this._cnx.addCleanUpListener(cleanUpPonger);
@@ -73,7 +79,7 @@ class Client {
   }
 
   getResponseEvents() {
-    return emitter.data;
+    return this._emitter;
   }
 }
 
