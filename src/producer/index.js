@@ -130,9 +130,6 @@ class Producer {
     } catch (e) {
       if (e.name === 'PulsarFlexProducerSendError') throw e;
       await new Promise(async (resolve, reject) => {
-        this._logger.warn(
-          `Message have been inserted to pending queue, this log can be ignored if topic have been unloaded current queue size ${this._pendingMessageQueue}`
-        );
         this._pendingMessageQueue.push({
           func: () =>
             services.sendMessage({
@@ -146,6 +143,9 @@ class Producer {
             }),
           resolve,
         });
+        this._logger.warn(
+          `Message have been inserted to pending queue, this log can be ignored if topic have been unloaded current queue size ${this._pendingMessageQueue.length}`
+        );
       });
     }
     this._sequenceId++;
@@ -179,9 +179,6 @@ class Producer {
     } catch (e) {
       if (e.name === 'PulsarFlexProducerSendError') throw e;
       await new Promise(async (resolve, reject) => {
-        this._logger.warn(
-          `Batch have been inserted to pending queue, this log can be ignored if topic have been unloaded current queue size ${this._pendingMessageQueue}`
-        );
         this._pendingMessageQueue.push({
           func: () =>
             services.sendBatch({
@@ -194,6 +191,9 @@ class Producer {
             }),
           resolve,
         });
+        this._logger.warn(
+          `Batch have been inserted to pending queue, this log can be ignored if topic have been unloaded current queue size ${this._pendingMessageQueue.length}`
+        );
       });
     }
     this._sequenceId++;
