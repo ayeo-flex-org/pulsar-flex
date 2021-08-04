@@ -1,7 +1,7 @@
 const errors = require('../../errors');
 
 class ResponseMediator {
-  constructor({ client, timeout = 5000 }) {
+  constructor({ client, timeout = 10000 }) {
     this._requests = {};
     this._commands = [];
     this._responseEvents = client.getResponseEvents();

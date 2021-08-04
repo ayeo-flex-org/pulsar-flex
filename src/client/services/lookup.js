@@ -18,6 +18,9 @@ const lookup = async ({
     const [serviceHost, servicePort] = discoveryServers[index].split(':');
     const lookupCommand = commands.lookup({ topic, requestId });
     const discoveryCnx = await connection({ host: serviceHost, port: servicePort, logger });
+    logger.info(
+      `connected succesfully ${serviceHost}:${servicePort}, now sending connect command.`
+    );
     await connectorService({
       cnx: discoveryCnx,
       jwt,
