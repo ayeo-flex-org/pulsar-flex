@@ -53,7 +53,6 @@ describe('Consumer tests', function () {
   describe('Consumer Connection tests', function() {
     it('should re-connect after topic unload', async function() {
       await cons.subscribe();
-      console.log('subscribed');
       let msgCounter = 0;
       await utils.produceMessages({messages: ['hello', 'goodbye']});
       await new Promise((resolve, reject) => {
@@ -69,14 +68,51 @@ describe('Consumer tests', function () {
           })
       })
 
-    })    
-    })
+    }) 
+    it('should re-send acks after connection loss', async function () {
+      await cons.subscribe();
+      let msgCounter = 0;
+      await utils.produceMessages({messages: ['hello', 'world', 'goodbye']});
+      await new Promise((resolve, reject) => {
+          cons.run({
+              onMessage: async ({ ack, message }) => {
+                msgCounter++;
+                cons._client.getCnx().close();
+                await ack();
+                if(msgCounter >= 3)
+                  resolve();
+              },
+              autoAck: false,
+          })
+      });
+      await cons.unsubscribe();
+      await cons.subscribe();
+      let expectedMessages = ['one', 'two', 'three']
+      let messages = [];
+      msgCounter = 0;
+      await utils.produceMessages({messages: expectedMessages});
+      await new Promise((resolve, reject) => {
+        cons.run({
+            onMessage: async ({ ack, message }) => {
+              msgCounter++;
+              messages.push(message);
+              if(msgCounter >= 3)
+                resolve();
+            },
+            autoAck: true,
+        })
+      });
+      assert.deepEqual(messages, expectedMessages);
+    });   
+  })
   describe('Automatic Ack', function() {
     it('Should not re-consume the message', async function() {
+      const expectedFirstMessage = 'hello';
+      const expectedSecondMessage = 'goodbye';
       let firstMessage;
       let secondMessage;
       await cons.subscribe();
-      await utils.produceMessages({messages: ['hello']})
+      await utils.produceMessages({messages: [expectedFirstMessage]})
       await new Promise((resolve, reject) => {
         cons.run({
             onMessage: async ({ ack, message }) => {
@@ -86,7 +122,7 @@ describe('Consumer tests', function () {
             },
         })
       })
-      await utils.produceMessages({messages: ['goodbye']})
+      await utils.produceMessages({messages: [expectedSecondMessage]})
       await cons.subscribe();
       await new Promise((resolve, reject) => {
         cons.run({
@@ -97,7 +133,8 @@ describe('Consumer tests', function () {
             },
         })
       })
-      assert.notEqual(secondMessage, firstMessage);
+      assert.equal(firstMessage, expectedFirstMessage);
+      assert.equal(secondMessage, expectedSecondMessage)
     });
   });
   describe('Manual Ack', function() {
@@ -110,7 +147,9 @@ describe('Consumer tests', function () {
         cons.run({
             onMessage: async ({ ack, message }) => {
               firstMessage = message;
+              console.log(message, 'first message#####');
               await cons.unsubscribe();
+              console.log('unsubbed first message#####')
               resolve();
             },
             autoAck: false,
@@ -121,7 +160,9 @@ describe('Consumer tests', function () {
         cons.run({
             onMessage: async ({ ack, message }) => {
               secondMessage = message;
+              console.log(message, 'second message#####');
               await cons.unsubscribe();
+              console.log('unsubbed first message#####')
               resolve();
             },
             autoAck: false,

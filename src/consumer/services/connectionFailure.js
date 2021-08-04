@@ -9,21 +9,7 @@ const connectionFailure = ({
   intervalMs,
   responseMediator,
 }) => {
-  // Handle forceful shutdowns
-  client.getCnx().addCleanUpListener(
-    async () =>
-      await reconnect({
-        client,
-        subscribe,
-        cleanState,
-        consumerState,
-        intervalMs,
-        responseMediator,
-        force: false,
-      })
-  );
-  // Handle graceful shutdown
-  client.getResponseEvents().once('closeConsumer', async () => {
+  const reconnectFunc = async () =>
     await reconnect({
       client,
       subscribe,
@@ -33,7 +19,12 @@ const connectionFailure = ({
       responseMediator,
       force: false,
     });
-  });
+  // Handle forceful shutdowns
+  client.getCnx().addCleanUpListener(reconnectFunc);
+  // Handle graceful shutdown
+  client.getResponseEvents().removeAllListeners('closeConsumer');
+  client.getResponseEvents().once('closeConsumer', reconnectFunc);
+  console.log(client.getResponseEvents().listenerCount('closeConsumer'));
 };
 
 const reconnect = async ({
@@ -55,6 +46,7 @@ const reconnect = async ({
     consumerState.set(consumerState.states.RECONNECTING);
     cleanState();
     subscribe().catch(async (e) => {
+      console.log(e);
       await utils.sleep(intervalMs);
       await reconnect({
         client,

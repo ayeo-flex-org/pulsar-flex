@@ -1,6 +1,7 @@
 const createSocket = require('./socket/socket');
 const resolver = require('../resolver');
 const serde = require('../serde');
+const { PulsarFlexSocketError } = require('../../errors');
 
 const sendRequest = (request, nonSerializedData, socket, responseMediator, autoResolve) => {
   socket.write(request, 'binary');
@@ -13,7 +14,7 @@ const connection = async ({ host, port, logger }) => {
     host,
     port,
     onData: resolver.data,
-    onError: (e) => console.error(e),
+    onError: (e) => logger.error(e),
   });
   return {
     sendSimpleCommandRequest: (dataToSerialize, responseMediator, autoResolve = false) => {

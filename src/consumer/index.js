@@ -50,7 +50,7 @@ module.exports = class Consumer {
     this._requestId = 0;
     this._curFlow = receiveQueueSize;
     this._consumerState = STATES.UNSUBSCRIBED;
-    this._pendingMessages = []
+    this._redeliverAcksQueue = []
     
     this._onMessageParams = {};
 
@@ -74,8 +74,7 @@ module.exports = class Consumer {
         await this._flow(nextFlow);
       }
     };
-    
-    // graceful shutdown
+    services.redeliverAcks(this._client, this._redeliverAcksQueue)
   }
 
   static get SUB_TYPES() {
@@ -115,7 +114,7 @@ module.exports = class Consumer {
       intervalMs: this.reconnectInterval,
       responseMediator: this._requestIdMediator,
     })
-    this._logger.info(`consumer: ${this.consumerName} id: ${this.consumerId} subscribing to topic: ${this.topic} with subscription: ${this.subscription}`)
+    this._logger.info(`consumer: ${this.consumerName} id: ${this.consumerId} subscribing to topic: ${this.topic} with subscription: ${this.subscription} request id: ${this._requestId}`)
     await services.subscribe({
       cnx: this._client.getCnx(),
       topic: this.topic,
@@ -131,7 +130,6 @@ module.exports = class Consumer {
     this.isSubscribed = true;
     if(this.getState() === STATES.RECONNECTING) {
       await this.run(this._onMessageParams);
-      this._setState(STATES.ACTIVE);
     }
     else {
       this._setState(STATES.INACTIVE);
@@ -166,7 +164,7 @@ module.exports = class Consumer {
     if(!this.isSubscribed) {
       throw new PulsarFlexUnsubscribeError('Consumer is already unsubscribed.')
     }
-    this._logger.info(`consumer: ${this.consumerName} id: ${this.consumerId} unsubscribing to topic: ${this.topic} with subscription: ${this.subscription}`)
+    this._logger.info(`consumer: ${this.consumerName} id: ${this.consumerId} unsubscribing to topic: ${this.topic} with subscription: ${this.subscription} request id: ${this._requestId}`)
     await services.unsubscribe({
       cnx: this._client.getCnx(),
       consumerId: this.consumerId,
@@ -179,9 +177,9 @@ module.exports = class Consumer {
     this._cleanState();
   }
 
-  _ack = ({ messageIdData, ackType }) => {
+  _ack = async ({ messageIdData, ackType }) => {
     try {
-      return services.ack({
+      return await services.ack({
         cnx: this._client.getCnx(),
         consumerId: this.consumerId,
         messageIdData,
@@ -191,9 +189,20 @@ module.exports = class Consumer {
       });
     }
     catch (e) {
-      if(e.name === 'PulsarFlexConsumerCloseError') {
-        console.log('need to re-deliver acks :/');
-      }
+      await new Promise((resolve, reject) => {
+        console.log('sent to redeliver');
+        this._redeliverAcksQueue.push({
+          func: () => services.ack({
+            cnx: this._client.getCnx(),
+            consumerId: this.consumerId,
+            messageIdData,
+            ackType,
+            requestId: this._requestId++,
+            responseMediator: this._requestIdMediator,
+          }),
+          resolve,
+        })
+      })
     }
   };
 
