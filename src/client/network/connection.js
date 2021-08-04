@@ -3,6 +3,9 @@ const resolver = require('../resolver');
 const serde = require('../serde');
 
 const sendRequest = (request, nonSerializedData, socket, responseMediator, autoResolve) => {
+  if (socket.readyState !== 'open') {
+    throw Error('Socket closed.');
+  }
   socket.write(request, 'binary');
   return responseMediator.response({ data: nonSerializedData, autoResolve });
 };
@@ -12,8 +15,8 @@ const connection = async ({ host, port, logger, emitter }) => {
   const socket = await createSocket({
     host,
     port,
+    onError: (e) => logger.error(e),
     onData: resolver.data(emitter),
-    onError: (e) => console.error(e),
   });
   return {
     sendSimpleCommandRequest: (dataToSerialize, responseMediator, autoResolve = false) => {

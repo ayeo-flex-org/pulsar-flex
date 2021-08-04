@@ -13,12 +13,12 @@ describe('Client payloadCommands serde', function () {
         command: commands.sendMessages({
           producerId: 1,
           sequenceId: 1,
-          numMessages: 2,
+          numMessages: 1,
         }),
         metadataCommand: commands.messageMetadata({
           producerName: 'bla',
           sequenceId: 1,
-          numMessages: 2,
+          numMessages: 1,
           properties: {},
         }),
         payload: 'Asdf',

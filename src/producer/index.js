@@ -144,7 +144,8 @@ class Producer {
           resolve,
         });
         this._logger.warn(
-          `Message have been inserted to pending queue, this log can be ignored if topic have been unloaded current queue size ${this._pendingMessageQueue.length}`
+          `Message have been inserted to pending queue, this log can be ignored if topic have been unloaded current queue size ${this._pendingMessageQueue.length}
+          error ${e}`
         );
       });
     }
@@ -153,7 +154,6 @@ class Producer {
   };
 
   sendBatch = async ({ messages }) => {
-    console.log(messages);
     if (!this._created)
       throw new errors.PulsarFlexProducerSendError({
         message: 'Cannot send messages over not created producer',
@@ -192,7 +192,8 @@ class Producer {
           resolve,
         });
         this._logger.warn(
-          `Batch have been inserted to pending queue, this log can be ignored if topic have been unloaded current queue size ${this._pendingMessageQueue.length}`
+          `Batch have been inserted to pending queue, this log can be ignored if topic have been unloaded current queue size ${this._pendingMessageQueue.length}
+          error: ${e}`
         );
       });
     }

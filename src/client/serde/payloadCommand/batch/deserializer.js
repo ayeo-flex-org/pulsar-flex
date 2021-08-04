@@ -13,9 +13,8 @@ const deserializer = ({ metadata, buffer, messages }) => {
     const message = buffer.slice(index, objectSingleMetadata.payloadSize + index);
     messages.push(message);
     index += objectSingleMetadata.payloadSize;
-
-    return messages;
   }
+  return messages;
 };
 
 module.exports = deserializer;

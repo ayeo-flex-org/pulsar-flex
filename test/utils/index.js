@@ -1,6 +1,6 @@
 const asyncExec = require('./asyncExec');
 const clearBacklog = require('./clearBacklog');
-const produceMsgs = require('./produceMsgs');
+const produceMessages = require('./produceMessages');
 const unloadTopic = require('./unloadTopic');
 const sleep = require('./sleep');
 const consumeMessage = require('./consumeMessage');
@@ -11,7 +11,7 @@ const createSubscription = require('./createSubscription');
 const utils = {
   asyncExec,
   clearBacklog,
-  produceMsgs,
+  produceMessages,
   unloadTopic,
   sleep,
   consumeMessage,

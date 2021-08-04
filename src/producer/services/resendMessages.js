@@ -4,7 +4,7 @@ const resendMessages = (client, messageQueue, logger) => {
 
     while (messageQueue.length > 0) {
       logger.info(`De queueing message from messageQueue current length ${messageQueue.length}`);
-      const { func, resolve } = messageQueue[messageQueue.length - 1];
+      const { func, resolve } = messageQueue[0];
       const result = await func();
 
       logger.info(`De queued message successfully`);
