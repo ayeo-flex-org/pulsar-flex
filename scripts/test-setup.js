@@ -36,7 +36,7 @@ console.log(`Setting up environment using JWT and pulsar standalone version ${ve
 
   asyncExec(`docker-compose -f ${dockerComposeFilePath} up --build`)
     .then(() => console.log('docker-compose gracefully shut down'))
-    .catch(() => console.log(`docker-compose killed`));
+    .catch((e) => console.log(`docker-compose killed ${e}`));
 
   console.log(
     `Waiting ${standaloneWaitTime}ms for pulsar-standalone to start before creating configurations`

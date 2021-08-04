@@ -9,7 +9,10 @@ const pinger = ({ cnx, pingingIntervalMs, responseMediator, logger }) => {
       .sendSimpleCommandRequest({ command: commandPing }, responseMediator)
       .catch(() => logger.warn('Could not send ping to broker.'));
   }, pingingIntervalMs);
-  return () => clearInterval(intervalId);
+  return () => {
+    logger.info(`Connection have been closed, clearing interval of pinger`);
+    clearInterval(intervalId);
+  };
 };
 
 module.exports = pinger;
