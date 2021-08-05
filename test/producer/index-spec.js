@@ -250,6 +250,7 @@ describe('Producer tests', function () {
         subscriptionName,
         topicName: topic,
       });
+      await producer.close();
       await utils.deleteTopic({ topicName: topic });
       assert(
         JSON.stringify(message).includes('key:[null], properties:[sinai=noob], content:galrose')
@@ -287,6 +288,7 @@ describe('Producer tests', function () {
         subscriptionName,
         topicName: topic,
       });
+      await producer.close();
       await utils.deleteTopic({ topicName: topic });
       assert(
         JSON.stringify(messages).includes('key:[null], properties:[sinai=noob], content:galrose') &&
