@@ -20,7 +20,7 @@ const sendBatch = async ({
     metadata: commands.singleMessageMetadata(message),
     payload: message.payload,
   }));
-  await sendPayloadBatchCommandRequest(
+  return await sendPayloadBatchCommandRequest(
     {
       metadataCommand: messageMetadata,
       command: sendMessages,
