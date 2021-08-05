@@ -65,18 +65,18 @@ describe('Producer tests', function () {
   });
   describe('on creating multiple shared producers', function () {
     it('should not throw exception', async function () {
-       const firstProducer = new Producer({
-          discoveryServers,
-          jwt,
-          topic,
-          producerAccessMode: Producer.ACCESS_MODES.SHARED,
-        });
-       const secondProducer = new Producer({
-          discoveryServers,
-          jwt,
-          topic,
-          producerAccessMode: Producer.ACCESS_MODES.SHARED,
-        });
+      const firstProducer = new Producer({
+        discoveryServers,
+        jwt,
+        topic,
+        producerAccessMode: Producer.ACCESS_MODES.SHARED,
+      });
+      const secondProducer = new Producer({
+        discoveryServers,
+        jwt,
+        topic,
+        producerAccessMode: Producer.ACCESS_MODES.SHARED,
+      });
       try {
         await firstProducer.create();
         await secondProducer.create();
@@ -243,7 +243,39 @@ describe('Producer tests', function () {
         topicName: topic,
       });
       await utils.deleteTopic({ topicName: topic });
-      assert(JSON.stringify(message).includes('key:[null], properties:[sinai=noob], content:galrose'));
+      assert(
+        JSON.stringify(message).includes('key:[null], properties:[sinai=noob], content:galrose')
+      );
+    });
+  });
+  describe('on sending batch, all messages should contain payload and properties', function () {
+    it('should not throw exception', async function () {
+      const topic = 'public/default/testSendMessage';
+      const subscriptionName = 'test';
+      await utils.createTopic({ topicName: topic });
+      await utils.createSubscription({ topicName: topic, subscriptionName });
+      const producer = new Producer({
+        discoveryServers,
+        jwt,
+        topic,
+      });
+      await producer.create();
+      await producer.sendBatch({
+        messages: [
+          { payload: 'galrose', properties: { sinai: 'noob' } },
+          { payload: 'batch', properties: { test: 'good' } },
+        ],
+      });
+      const messages = await utils.consumeMessage({
+        numberOfMessages: 2,
+        subscriptionName,
+        topicName: topic,
+      });
+      await utils.deleteTopic({ topicName: topic });
+      assert(
+        JSON.stringify(messages).includes('key:[null], properties:[sinai=noob], content:galrose') &&
+          JSON.stringify(messages).includes('key:[null], properties:[test=good], content:batch')
+      );
     });
   });
 });
