@@ -228,7 +228,11 @@ describe('Producer tests', function () {
     it('should not throw exception', async function () {
       const topic = 'public/default/testSendMessage';
       const subscriptionName = 'test';
-      await utils.createTopic({ topicName: topic });
+      try {
+        await utils.createTopic({ topicName: topic });
+      } catch (e) {
+        if (!e.includes('This topic already exists')) throw e;
+      }
       await utils.createSubscription({ topicName: topic, subscriptionName });
       const producer = new Producer({
         discoveryServers,
@@ -252,8 +256,11 @@ describe('Producer tests', function () {
     it('should not throw exception', async function () {
       const topic = 'public/default/testSendMessage';
       const subscriptionName = 'test';
-      await utils.createTopic({ topicName: topic });
-      await utils.createSubscription({ topicName: topic, subscriptionName });
+      try {
+        await utils.createTopic({ topicName: topic });
+      } catch (e) {
+        if (!e.includes('This topic already exists')) throw e;
+      }      await utils.createSubscription({ topicName: topic, subscriptionName });
       const producer = new Producer({
         discoveryServers,
         jwt,
