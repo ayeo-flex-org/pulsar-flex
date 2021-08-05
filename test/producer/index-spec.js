@@ -231,7 +231,7 @@ describe('Producer tests', function () {
       try {
         await utils.createTopic({ topicName: topic });
       } catch (e) {
-        if (!e.includes('This topic already exists')) throw e;
+        if (!e.message.includes('This topic already exists')) throw e;
       }
       await utils.createSubscription({ topicName: topic, subscriptionName });
       const producer = new Producer({
@@ -259,8 +259,9 @@ describe('Producer tests', function () {
       try {
         await utils.createTopic({ topicName: topic });
       } catch (e) {
-        if (!e.includes('This topic already exists')) throw e;
-      }      await utils.createSubscription({ topicName: topic, subscriptionName });
+        if (!e.message.includes('This topic already exists')) throw e;
+      }
+      await utils.createSubscription({ topicName: topic, subscriptionName });
       const producer = new Producer({
         discoveryServers,
         jwt,
