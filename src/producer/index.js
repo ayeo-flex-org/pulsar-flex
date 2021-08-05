@@ -68,7 +68,9 @@ class Producer {
       this._created && services.reconnect(this.create).then(() => (this._connected = true));
     });
 
-    this._logger.info(`Connected successfully will send command create topic: ${this._topic}`);
+    this._logger.info(
+      `Connected successfully will send command create producer to topic: ${this._topic}`
+    );
 
     const { command } = await services.create({
       topic: this._topic,
@@ -167,7 +169,7 @@ class Producer {
         message: 'Pending messages queue size has been exceeded',
       });
     try {
-      await services.sendBatch({
+      const { command } = await services.sendBatch({
         producerId: this._producerId,
         producerName: this._producerName,
         client: this._client,
