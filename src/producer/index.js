@@ -169,7 +169,7 @@ class Producer {
         message: 'Pending messages queue size has been exceeded',
       });
     try {
-      await services.sendBatch({
+      const { command } = await services.sendBatch({
         producerId: this._producerId,
         producerName: this._producerName,
         client: this._client,
