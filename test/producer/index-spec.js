@@ -284,7 +284,7 @@ describe('Producer tests', function () {
         ],
       });
       const messages = await utils.consumeMessage({
-        numberOfMessages: 1,
+        numberOfMessages: 2,
         subscriptionName,
         topicName: topic,
       });
