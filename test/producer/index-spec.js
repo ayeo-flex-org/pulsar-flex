@@ -233,7 +233,11 @@ describe('Producer tests', function () {
       } catch (e) {
         if (!e.message.includes('This topic already exists')) throw e;
       }
-      await utils.createSubscription({ topicName: topic, subscriptionName });
+      try {
+        await utils.createSubscription({ topicName: topic, subscriptionName });
+      } catch (e) {
+        if (!e.message.includes('Subscription already exists for topic')) throw e;
+      }
       const producer = new Producer({
         discoveryServers,
         jwt,
@@ -254,14 +258,18 @@ describe('Producer tests', function () {
   });
   describe('on sending batch, all messages should contain payload and properties', function () {
     it('should not throw exception', async function () {
-      const topic = 'public/default/testSendMessage';
+      const topic = 'public/default/testSendBatch';
       const subscriptionName = 'test';
       try {
         await utils.createTopic({ topicName: topic });
       } catch (e) {
         if (!e.message.includes('This topic already exists')) throw e;
       }
-      await utils.createSubscription({ topicName: topic, subscriptionName });
+      try {
+        await utils.createSubscription({ topicName: topic, subscriptionName });
+      } catch (e) {
+        if (!e.message.includes('Subscription already exists for topic')) throw e;
+      }
       const producer = new Producer({
         discoveryServers,
         jwt,
