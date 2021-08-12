@@ -34,10 +34,10 @@ describe('Consumer tests', function () {
     await utils.clearBacklog();
   });
   afterEach(async function () {
-    if (cons.isSubscribed) {
+    if (cons._isSubscribed) {
       await cons.unsubscribe();
     }
-    if (cons2.isSubscribed) {
+    if (cons2._isSubscribed) {
       await cons2.unsubscribe();
     }
   });
