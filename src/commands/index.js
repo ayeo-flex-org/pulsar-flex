@@ -12,6 +12,7 @@ const singleMessageMetadata = require('./singleMessageMetadata');
 const ack = require('./ack');
 const lookup = require('./lookup');
 const unsubscribe = require('./closeConsumer');
+const redeliverUnacknowledgedMessages = require('./redeliverUnacknowledgedMessages');
 
 module.exports = {
   connect,
@@ -28,4 +29,5 @@ module.exports = {
   singleMessageMetadata,
   ack,
   lookup,
+  redeliverUnacknowledgedMessages,
 };

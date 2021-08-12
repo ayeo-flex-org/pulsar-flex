@@ -11,7 +11,7 @@ const { createLogger, LEVELS } = require('../logger');
 const defaultLogger = require('../logger/default');
 
 const SUB_TYPES = pulsarApi.CommandSubscribe.SubType;
-const ACK_TYPES = pulsarApi.CommandAck.AckType;
+const ACK_TYPES = { ...pulsarApi.CommandAck.AckType, NEGATIVE: -1 };
 const INITIAL_POSITION = pulsarApi.CommandSubscribe.InitialPosition;
 const STATES = {
   ACTIVE: 'ACTIVE', // Subscribed and consuming messages
@@ -28,6 +28,7 @@ module.exports = class Consumer {
     subscription,
     subType,
     consumerName,
+    proritizeUnacknowledgedMessages = false,
     initialPosition = INITIAL_POSITION.LATEST,
     readCompacted = false,
     receiveQueueSize = 500,
@@ -45,6 +46,8 @@ module.exports = class Consumer {
     this.subscription = subscription;
     this.subType = subType;
     this.consumerName = consumerName;
+    this._proritizeUnacknowledgedMessages = proritizeUnacknowledgedMessages;
+    this._unacknowledgedMessagesQueue = [];
     this.readCompacted = readCompacted;
     this.initialPosition = initialPosition;
     this.consumerId = 0;
