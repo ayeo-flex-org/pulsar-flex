@@ -249,7 +249,10 @@ module.exports = class Consumer {
         return;
       }
       if (this.receiveQueue.length <= 0) {
-        this._processTimeoutInterval = setTimeout(async () => await process(), 1000);
+        this._processTimeoutInterval = setTimeout(async () => {
+          await this._flow(this.receiveQueueSize);
+          await process();
+        }, 1000);
         return;
       }
       const message = this.receiveQueue.shift();
