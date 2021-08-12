@@ -9,7 +9,7 @@ const redeliverUnacknowledgedMessages = ({ messageIdData, consumerId, requestId 
     ? messageIdData.map((data) => common.convertToMessageIdData(data))
     : [common.convertToMessageIdData(messageIdData)];
   return baseCommand.setRedeliverunacknowledgedmessages(
-    new pulsarApi.CommandRedeliverunacknowledgedmessages()
+    new pulsarApi.CommandRedeliverUnacknowledgedMessages()
       .setMessageIdList(messageIds)
       .setRequestId(requestId)
       .setConsumerId(consumerId)
