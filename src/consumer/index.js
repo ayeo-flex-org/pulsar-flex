@@ -28,7 +28,7 @@ module.exports = class Consumer {
     subscription,
     subType,
     consumerName,
-    proritizeUnacknowledgedMessages = false,
+    prioritizeUnacknowledgedMessages = false,
     initialPosition = INITIAL_POSITION.LATEST,
     readCompacted = false,
     receiveQueueSize = 500,
@@ -52,7 +52,7 @@ module.exports = class Consumer {
     this._receiveQueueSize = receiveQueueSize;
     this._reconnectInterval = reconnectInterval;
     this._isRedeliveringUnacknowledgedMessages = false;
-    this._proritizeUnacknowledgedMessages = proritizeUnacknowledgedMessages;
+    this._prioritizeUnacknowledgedMessages = prioritizeUnacknowledgedMessages;
     this._requestId = 0;
     this._curFlow = receiveQueueSize;
     this._consumerState = STATES.UNSUBSCRIBED;
@@ -82,7 +82,7 @@ module.exports = class Consumer {
             metadata: data.metadata,
             payload: data.payload[i],
           },
-          this._isRedeliveringUnacknowledgedMessages && this._proritizeUnacknowledgedMessages
+          this._isRedeliveringUnacknowledgedMessages && this._prioritizeUnacknowledgedMessages
             ? 1
             : 2
         );
@@ -264,7 +264,7 @@ module.exports = class Consumer {
       if (!this._isSubscribed) {
         return;
       }
-      if (this.receiveQueue.size <= 0 && this._isRedeliveringUnacknowledgedMessages) {
+      if (this.receiveQueue.size <= 0 && !this._isRedeliveringUnacknowledgedMessages) {
         this._processTimeoutInterval = setTimeout(async () => {
           await this._flow(this._receiveQueueSize);
           await process();

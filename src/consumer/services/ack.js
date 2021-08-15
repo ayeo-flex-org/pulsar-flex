@@ -11,7 +11,7 @@ const ack = async ({
   responseMediator,
   setRedeliveringUnacknowledgedMessages,
 }) => {
-  const cnx = await client.getCnx();
+  const cnx = client.getCnx();
   if (ackType > 0) {
     const commandAck = commands.ack({
       consumerId,
@@ -19,12 +19,15 @@ const ack = async ({
       ackType,
       requestId,
     });
-    const { command } = cnx.sendSimpleCommandRequest({ command: commandAck }, responseMediator);
+    const { command } = await cnx.sendSimpleCommandRequest(
+      { command: commandAck },
+      responseMediator
+    );
     if (!utils.isNil(command.error)) throw new errors.PulsarFlexAckError(command.message);
     return command;
   }
   setRedeliveringUnacknowledgedMessages(true);
-  const { command } = cnx.sendSimpleCommandRequest({
+  const { command } = await cnx.sendSimpleCommandRequest({
     command: commands.redeliverUnacknowledgedMessages({ requestId, consumerId, messageIdData }),
     responseMediator,
   });
