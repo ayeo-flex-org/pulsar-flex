@@ -34,10 +34,10 @@ describe('Consumer tests', function () {
     await utils.clearBacklog();
   });
   afterEach(async function () {
-    if (cons.isSubscribed) {
+    if (cons._isSubscribed) {
       await cons.unsubscribe();
     }
-    if (cons2.isSubscribed) {
+    if (cons2._isSubscribed) {
       await cons2.unsubscribe();
     }
   });
@@ -53,7 +53,7 @@ describe('Consumer tests', function () {
         await new Promise((resolve, reject) => {
           const resolveIf = () => msgCounter >= 3 && resolve();
           cons.run({
-            onMessage: async ({ ack, message }) => {
+            onMessage: async ({ message }) => {
               messages.push(message.toString());
               msgCounter++;
               if (msgCounter === 1) await cons.unsubscribe();
@@ -107,7 +107,7 @@ describe('Consumer tests', function () {
         cons.run({
           onMessage: async ({ ack, message }) => {
             msgCounter++;
-            if (msgCounter == 1) await utils.unloadTopic();
+            if (msgCounter === 1) await utils.unloadTopic();
             if (msgCounter > 1) resolve();
           },
           autoAck: true,
