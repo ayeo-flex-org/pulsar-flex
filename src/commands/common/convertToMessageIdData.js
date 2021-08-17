@@ -5,9 +5,7 @@ const convertToMessageIdData = (messageIdData) => {
     .setLedgerid(messageIdData.ledgerid)
     .setEntryid(messageIdData.entryid)
     .setPartition(messageIdData.partition)
-    .setBatchIndex(messageIdData.batchIndex)
-    .setAckSetList(messageIdData.ackSetList)
-    .setBatchSize(messageIdData.batchSize);
+    .setBatchIndex(messageIdData.batchIndex);
 };
 
 module.exports = convertToMessageIdData;

@@ -61,25 +61,22 @@ module.exports = class Consumer {
     this._onMessageParams = {};
     this._processTimeoutInterval = null;
 
-    this.receiveQueue = new PriorityQueue();
+    this._receiveQueue = new PriorityQueue();
 
     this._requestIdMediator = new responseMediators.RequestIdResponseMediator({
       client: this._client,
       commands: ['success', 'error', 'ackresponse'],
     });
-    this.noId = new responseMediators.NoIdResponseMediator({
+    this._noId = new responseMediators.NoIdResponseMediator({
       client: this._client,
       commands: [],
     });
 
     this._isSubscribed = false;
-    this._reflow = async (data) => {
-      this._isRedeliveringUnacknowledgedMessages &&
-      this._setRedeliveringUnacknowledgedMessages(false)
+    this._enqueueMessage = (data) => {
       // Classic for, for performance
-      console.log('before reflow', this.receiveQueue.items.map((i) => i.element.payload.toString()))
       for (let i = 0; i < data.payload.length; i++) {
-        this.receiveQueue.enqueue(
+        this._receiveQueue.enqueue(
           {
             command: data.command,
             metadata: data.metadata,
@@ -89,10 +86,14 @@ module.exports = class Consumer {
             ? 1
             : 2
         );
+        this._isRedeliveringUnacknowledgedMessages &&
+          this._setRedeliveringUnacknowledgedMessages(false);
       }
-      console.log('after reflow', this.receiveQueue.items.map((i) => i.element.payload.toString()))
+    };
+
+    this._reflow = async () => {
       const nextFlow = Math.ceil(this._receiveQueueSize / 2);
-      if (--this._curFlow <= nextFlow) {
+      if (--this._curFlow <= nextFlow && !this._receiveQueue.isEmpty()) {
         this._curFlow += nextFlow;
         this._logger.info(`Re-flow, asking for ${nextFlow} more messages.`);
         await this._flow(nextFlow);
@@ -177,6 +178,11 @@ module.exports = class Consumer {
   };
 
   _setRedeliveringUnacknowledgedMessages = (redeliveringUnacknowledgedMessages) => {
+    if (
+      redeliveringUnacknowledgedMessages &&
+      (this._subType === SUB_TYPES.EXCLUSIVE || this._subType === SUB_TYPES.FAILOVER)
+    )
+      this._receiveQueue = new PriorityQueue();
     this._isRedeliveringUnacknowledgedMessages = redeliveringUnacknowledgedMessages;
   };
 
@@ -185,15 +191,16 @@ module.exports = class Consumer {
       cnx: this._client.getCnx(),
       flowAmount,
       consumerId: this._consumerId,
-      responseMediator: this.noId,
+      responseMediator: this._noId,
     });
   };
 
   _cleanState = () => {
     clearTimeout(this._processTimeoutInterval);
     this._client.getResponseEvents().off('message', this._reflow);
+    this._client.getResponseEvents().off('message', this._enqueueMessage);
     this._isSubscribed = false;
-    this.receiveQueue = new PriorityQueue();
+    this._receiveQueue = new PriorityQueue();
   };
 
   unsubscribe = async () => {
@@ -226,6 +233,7 @@ module.exports = class Consumer {
         ackType,
         requestId: this._requestId++,
         responseMediator: this._requestIdMediator,
+        negativeAckResponseMediator: this._noId,
         setRedeliveringUnacknowledgedMessages: this._setRedeliveringUnacknowledgedMessages,
       });
     } catch (e) {
@@ -259,21 +267,22 @@ module.exports = class Consumer {
     this._onMessageParams = { onMessage, autoAck };
     this._setState(STATES.ACTIVE);
     this._client.getResponseEvents().on('message', this._reflow);
+    this._client.getResponseEvents().on('message', this._enqueueMessage);
 
     const process = async () => {
       if (!this._isSubscribed) {
         return;
       }
-      if (this.receiveQueue.isEmpty() && !this._isRedeliveringUnacknowledgedMessages) {
+      if (
+        this._receiveQueue.isEmpty() ||
+        (this._isRedeliveringUnacknowledgedMessages && this._prioritizeUnacknowledgedMessages)
+      ) {
         this._processTimeoutInterval = setTimeout(async () => {
-          await this._flow(this._receiveQueueSize);
           await process();
         }, 1000);
         return;
       }
-      console.log('before dequeue', this.receiveQueue.items.map((i) => i.element.payload.toString()))
-      const message = this.receiveQueue.dequeue();
-      console.log('after dequeue', this.receiveQueue.items.map((i) => i.element.payload.toString()))
+      const message = this._receiveQueue.dequeue();
       if (autoAck) {
         await this._ack({
           messageIdData: message.command.messageId,

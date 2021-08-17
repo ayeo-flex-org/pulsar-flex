@@ -5,7 +5,6 @@ class PriorityQueue {
   }
 
   enqueue(element, priority) {
-    console.log('enqueueing', element.payload.toString());
     const qElement = new QElement(element, priority);
     let contain = false;
     // for, for performance

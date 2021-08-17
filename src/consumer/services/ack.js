@@ -9,6 +9,8 @@ const ack = async ({
   ackType,
   requestId,
   responseMediator,
+  negativeAckResponseMediator,
+  prioritizeUnacknowledgedMessages,
   setRedeliveringUnacknowledgedMessages,
 }) => {
   const cnx = client.getCnx();
@@ -27,11 +29,17 @@ const ack = async ({
     return command;
   }
   setRedeliveringUnacknowledgedMessages(true);
-  const { command } = await cnx.sendSimpleCommandRequest({
-    command: commands.redeliverUnacknowledgedMessages({ requestId, consumerId, messageIdData }),
-    responseMediator,
-  });
-  return command;
+  await cnx.sendSimpleCommandRequest(
+    {
+      command: commands.redeliverUnacknowledgedMessages({
+        consumerId,
+        messageIdData,
+        prioritizeUnacknowledgedMessages,
+      }),
+    },
+    negativeAckResponseMediator,
+    true
+  );
 };
 
 module.exports = ack;
