@@ -1,4 +1,4 @@
-const { Consumer } = require('../../src');
+const { Consumer, Producer } = require('../../src');
 const config = require('../config');
 const assert = require('assert');
 const utils = require('../utils');
@@ -331,6 +331,33 @@ describe('Consumer tests', function () {
       });
       assert.deepEqual(receivedMessages, ['first', 'first', 'second', 'third']);
     });
+    it('Should read the unacknowledged messages again,in batch, in failover consumer', async function () {
+      const messages = ['first', 'second', 'third'];
+      const receivedMessages = [];
+      await cons.subscribe();
+      const producer = new Producer({
+        discoveryServers,
+        jwt,
+        topic: 'persistent://public/default/test',
+      });
+      await producer.create();
+      let messageCounter = 0;
+      await producer.sendBatch({ messages: messages.map((message) => ({ payload: message })) });
+      await producer.close();
+      await new Promise((resolve, reject) => {
+        cons.run({
+          onMessage: async ({ ack, message }) => {
+            if (messageCounter === 0) await ack({ type: Consumer.ACK_TYPES.NEGATIVE });
+            else await ack({ type: Consumer.ACK_TYPES.INDIVIDUAL });
+            messageCounter++;
+            receivedMessages.push(message.toString());
+            messageCounter === 4 && resolve();
+          },
+          autoAck: false,
+        });
+      });
+      assert.deepEqual(receivedMessages, ['first', 'first', 'second', 'third']);
+    });
     it('Should read the unacknowledged message again after the current flow, in shared consumer', async function () {
       const messages = ['first', 'second', 'third'];
       const receivedMessages = [];
@@ -369,6 +396,34 @@ describe('Consumer tests', function () {
           autoAck: false,
         });
       });
+      assert.deepEqual(receivedMessages, ['first', 'first', 'second', 'third']);
+    });
+    it('Should read the unacknowledged message again before the rest of the flow,in batch, in shared consumer', async function () {
+      const messages = ['first', 'second', 'third'];
+      const receivedMessages = [];
+      await unackPrioritySharedConsumer.subscribe();
+      const producer = new Producer({
+        discoveryServers,
+        jwt,
+        topic: 'persistent://public/default/test',
+      });
+      await producer.create();
+      let messageCounter = 0;
+      await producer.sendBatch({ messages: messages.map((message) => ({ payload: message })) });
+      console.log('produced');
+      await new Promise((resolve, reject) => {
+        unackPrioritySharedConsumer.run({
+          onMessage: async ({ ack, message }) => {
+            if (messageCounter === 0) await ack({ type: Consumer.ACK_TYPES.NEGATIVE });
+            else await ack({ type: Consumer.ACK_TYPES.INDIVIDUAL });
+            messageCounter++;
+            receivedMessages.push(message.toString());
+            messageCounter === 4 && resolve();
+          },
+          autoAck: false,
+        });
+      });
+      await producer.close();
       assert.deepEqual(receivedMessages, ['first', 'first', 'second', 'third']);
     });
   });
