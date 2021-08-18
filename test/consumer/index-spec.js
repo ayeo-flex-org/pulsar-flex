@@ -410,7 +410,6 @@ describe('Consumer tests', function () {
       await producer.create();
       let messageCounter = 0;
       await producer.sendBatch({ messages: messages.map((message) => ({ payload: message })) });
-      console.log('produced');
       await new Promise((resolve, reject) => {
         unackPrioritySharedConsumer.run({
           onMessage: async ({ ack, message }) => {
