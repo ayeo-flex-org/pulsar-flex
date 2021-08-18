@@ -4,7 +4,7 @@ const messageMetadata = ({
   producerName,
   sequenceId,
   numMessages = undefined,
-  properties = [],
+  properties = {},
 }) => {
   const keyValueProperties = Object.entries(properties).map(([key, value]) =>
     new pulsarApi.KeyValue().setKey(key).setValue(value)
