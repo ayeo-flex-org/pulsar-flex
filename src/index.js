@@ -1,6 +1,6 @@
 const Producer = require('./producer');
 const Consumer = require('./consumer');
-const LEVELS = require('./utils');
+const { LEVELS } = require('./logger');
 
 const pulsar = {
   logLevel: LEVELS,
