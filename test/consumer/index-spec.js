@@ -1,4 +1,4 @@
-const { Consumer } = require('../../src');
+const { Consumer, Producer } = require('../../src');
 const config = require('../config');
 const assert = require('assert');
 const utils = require('../utils');
@@ -8,6 +8,7 @@ const { LEVELS } = require('../../src/logger');
 const { jwt, discoveryServers, topic, containerName } = config;
 
 describe('Consumer tests', function () {
+  new Producer();
   const cons = new Consumer({
     discoveryServers,
     jwt,

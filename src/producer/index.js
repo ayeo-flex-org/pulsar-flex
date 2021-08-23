@@ -8,7 +8,12 @@ const { createLogger, LEVELS } = require('../logger');
 const defaultLogger = require('../logger/default');
 
 const ACCESS_MODES = pulsarApi.ProducerAccessMode;
-
+/**
+ * Create an instance of a producer
+ * @param {Object} params
+ * @param {import('../../types').ProducerConfig} [params]
+ * @returns {import('../../types').Producer}
+ */
 class Producer {
   constructor({
     topic,
