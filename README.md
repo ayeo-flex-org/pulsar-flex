@@ -47,6 +47,7 @@ Supports all os platforms that can run nodejs.
     * Automatic ack  
     * Negative ack
   * Reconnection built in  
+  * Check redelivery count, increases on redeliver in Shared and Key_Shared modes
 * Authentication
   * JWT
 
@@ -97,12 +98,13 @@ const run = async () => {
 
   await consumer.subscribe();
   await consumer.run({
-    onMessage: async ({ ack, message, properties }) => {
+    onMessage: async ({ ack, message, properties, redeliveryCount }) => {
       await ack(); // Default is specific ack
       // await ack({type: Consumer.ACK_TYPES.CUMULATIVE});
       console.log({
         message,
         properties,
+        redeliveryCount,
       })
     }, autoAck: false, // specify true in order to use automaticAck
   });
