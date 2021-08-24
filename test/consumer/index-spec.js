@@ -399,13 +399,16 @@ describe('Consumer tests', function () {
     });
     it('Should read the unacknowledged message again after the current flow, in shared consumer', async function () {
       const messages = ['first', 'second', 'third'];
+      const expectedRedeliveryCount = [0, 0, 0, 1];
       const receivedMessages = [];
+      const receivedRedeliveryCount = [];
       await sharedConsumer.subscribe();
       let messageCounter = 0;
       await utils.produceMessages({ messages });
       await new Promise((resolve, reject) => {
         sharedConsumer.run({
-          onMessage: async ({ ack, message }) => {
+          onMessage: async ({ ack, message, redeliveryCount }) => {
+            receivedRedeliveryCount.push(redeliveryCount);
             if (messageCounter === 0) await ack({ type: Consumer.ACK_TYPES.NEGATIVE });
             else await ack({ type: Consumer.ACK_TYPES.INDIVIDUAL });
             messageCounter++;
@@ -415,17 +418,21 @@ describe('Consumer tests', function () {
           autoAck: false,
         });
       });
+      assert.deepEqual(receivedRedeliveryCount, expectedRedeliveryCount);
       assert.deepEqual(receivedMessages, ['first', 'second', 'third', 'first']);
     });
     it('Should read the unacknowledged message again before the rest of the flow, in shared consumer', async function () {
       const messages = ['first', 'second', 'third'];
+      const expectedRedeliveryCount = [0, 1, 0, 0];
       const receivedMessages = [];
+      const receivedRedeliveryCount = [];
       await unackPrioritySharedConsumer.subscribe();
       let messageCounter = 0;
       await utils.produceMessages({ messages });
       await new Promise((resolve, reject) => {
         unackPrioritySharedConsumer.run({
-          onMessage: async ({ ack, message }) => {
+          onMessage: async ({ ack, message, redeliveryCount }) => {
+            receivedRedeliveryCount.push(redeliveryCount);
             if (messageCounter === 0) await ack({ type: Consumer.ACK_TYPES.NEGATIVE });
             else await ack({ type: Consumer.ACK_TYPES.INDIVIDUAL });
             messageCounter++;
@@ -435,6 +442,7 @@ describe('Consumer tests', function () {
           autoAck: false,
         });
       });
+      assert.deepEqual(receivedRedeliveryCount, expectedRedeliveryCount);
       assert.deepEqual(receivedMessages, ['first', 'first', 'second', 'third']);
     });
     it('Should read the unacknowledged message again before the rest of the flow,in batch, in shared consumer', async function () {
