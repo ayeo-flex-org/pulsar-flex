@@ -126,6 +126,41 @@ describe('Consumer tests', function () {
         assert.ok(false);
       }
     });
+    it('should consume the messages successfully with headers', async function () {
+      try {
+        await cons.subscribe();
+        let expectedMessages = ['galrose'];
+        let properties = { sinai: 'noob' };
+        let messages = [];
+        let receivedProperties;
+
+        const producer = new Producer({
+          discoveryServers,
+          jwt,
+          topic: 'persistent://public/default/test',
+        });
+        await producer.create();
+        await producer.sendMessage({ payload: 'galrose', properties: { sinai: 'noob' } });
+        await producer.close();
+        await new Promise((resolve, reject) => {
+          cons.run({
+            onMessage: ({ message, properties }) => {
+              messages.push(message.toString());
+              receivedProperties = properties;
+              console.log(properties);
+              if (messages.length >= expectedMessages.length) {
+                resolve();
+              }
+            },
+          });
+        });
+        assert.deepEqual(messages, expectedMessages);
+        assert.deepEqual(receivedProperties, properties);
+      } catch (e) {
+        console.log(e);
+        assert.ok(false);
+      }
+    });
   });
   describe('Consumer Connection tests', function () {
     it('should re-connect after topic unload', async function () {

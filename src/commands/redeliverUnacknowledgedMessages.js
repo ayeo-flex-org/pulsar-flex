@@ -1,11 +1,7 @@
 const pulsarApi = require('./protocol/pulsar/pulsar_pb');
 const common = require('./common');
 
-const redeliverUnacknowledgedMessages = ({
-  messageIdData,
-  consumerId,
-  prioritizeUnacknowledgedMessages,
-}) => {
+const redeliverUnacknowledgedMessages = ({ messageIdData, consumerId }) => {
   const baseCommand = new pulsarApi.BaseCommand().setType(
     pulsarApi.BaseCommand.Type.REDELIVER_UNACKNOWLEDGED_MESSAGES
   );
