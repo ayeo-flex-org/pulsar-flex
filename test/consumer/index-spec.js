@@ -107,13 +107,16 @@ describe('Consumer tests', function () {
       try {
         await cons.subscribe();
         let expectedMessages = ['hello', 'world', 'goodbye'];
+        let expectedRedeliveryCount = [0, 0, 0];
         let messages = [];
+        let redeliveryCounts = [];
 
         await utils.produceMessages({ messages: expectedMessages });
         await new Promise((resolve, reject) => {
           cons.run({
-            onMessage: ({ ack, message }) => {
+            onMessage: ({ ack, message, redeliveryCount }) => {
               messages.push(message.toString());
+              redeliveryCounts.push(redeliveryCount);
               if (messages.length >= expectedMessages.length) {
                 resolve();
               }
@@ -121,6 +124,7 @@ describe('Consumer tests', function () {
           });
         });
         assert.deepEqual(messages, expectedMessages);
+        assert.deepEqual(redeliveryCounts, expectedRedeliveryCount);
       } catch (e) {
         console.log(e);
         assert.ok(false);
