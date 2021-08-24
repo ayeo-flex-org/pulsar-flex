@@ -45,6 +45,7 @@ Supports all os platforms that can run nodejs.
     * Specific ack
     * Cumulative ack
     * Automatic ack  
+    * Negative ack
   * Reconnection built in  
 * Authentication
   * JWT
@@ -96,11 +97,12 @@ const run = async () => {
 
   await consumer.subscribe();
   await consumer.run({
-    onMessage: async ({ ack, message }) => {
+    onMessage: async ({ ack, message, properties }) => {
       await ack(); // Default is specific ack
       // await ack({type: Consumer.ACK_TYPES.CUMULATIVE});
       console.log({
         message,
+        properties,
       })
     }, autoAck: false, // specify true in order to use automaticAck
   });
