@@ -293,6 +293,11 @@ module.exports = class Consumer {
         message: message.payload,
         metadata: message.metadata,
         command: message.command,
+        redeliveryCount: message.command.redeliveryCount,
+        properties: message.metadata.propertiesList.reduce(
+          (accumulated, { key, value }) => ({ ...accumulated, [key]: value }),
+          {}
+        ),
         ack: (options = {}) =>
           this._ack({
             messageIdData: message.command.messageId,
