@@ -99,7 +99,7 @@ const run = async () => {
   await consumer.subscribe();
   await consumer.run({
     onMessage: async ({ ack, message, properties, redeliveryCount }) => {
-      await ack(); // Default is specific ack
+      await ack(); // Default is individual ack
       // await ack({type: Consumer.ACK_TYPES.CUMULATIVE});
       console.log({
         message,
