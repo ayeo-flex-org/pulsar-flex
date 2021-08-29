@@ -39,9 +39,9 @@ const data = (emitter) => {
         const { type, command } = serde.simpleCommand.deserializer(slicedBuffer);
         emitter.emit(type, { command });
       } else {
-        const { type, command, payload, metadata } =
+        const { type, command, messages, metadata } =
           serde.payloadCommand.deserializer(slicedBuffer);
-        emitter.emit(type, { command, metadata, payload });
+        emitter.emit(type, { command, metadata, messages });
       }
       currentBufferIndex += expectedFrameSize;
     }

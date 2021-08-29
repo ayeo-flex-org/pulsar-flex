@@ -75,12 +75,14 @@ module.exports = class Consumer {
     this._isSubscribed = false;
     this._enqueueMessage = (data) => {
       // Classic for, for performance
-      for (let i = 0; i < data.payload.length; i++) {
+      for (let i = 0; i < data.messages.length; i++) {
         this._receiveQueue.enqueue(
           {
             command: data.command,
-            metadata: data.metadata,
-            payload: data.payload[i],
+            metadata: data.messages[i].singleMessageMetadata
+              ? data.messages[i].singleMessageMetadata
+              : data.metadata,
+            payload: data.messages[i].payload,
           },
           this._isRedeliveringUnacknowledgedMessages && this._prioritizeUnacknowledgedMessages
             ? 1

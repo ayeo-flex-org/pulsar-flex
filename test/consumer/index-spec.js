@@ -30,7 +30,7 @@ describe('Consumer tests', function () {
     receiveQueueSize: 1000,
     logLevel: LEVELS.INFO,
   });
-  const sharedConsumer = new Consumer({
+  const sharedConsumer1 = new Consumer({
     discoveryServers,
     jwt,
     topic: 'persistent://public/default/test',
@@ -41,13 +41,24 @@ describe('Consumer tests', function () {
     receiveQueueSize: 1000,
     logLevel: LEVELS.INFO,
   });
-  const unackPrioritySharedConsumer = new Consumer({
+  const sharedConsumer2 = new Consumer({
     discoveryServers,
     jwt,
     topic: 'persistent://public/default/test',
     subscription: 'subscription',
     subType: Consumer.SUB_TYPES.SHARED,
     consumerName: 'Consy4',
+    readCompacted: false,
+    receiveQueueSize: 1000,
+    logLevel: LEVELS.INFO,
+  });
+  const unackPrioritySharedConsumer = new Consumer({
+    discoveryServers,
+    jwt,
+    topic: 'persistent://public/default/test',
+    subscription: 'subscription',
+    subType: Consumer.SUB_TYPES.SHARED,
+    consumerName: 'Consy5',
     readCompacted: false,
     receiveQueueSize: 1000,
     logLevel: LEVELS.INFO,
@@ -63,8 +74,11 @@ describe('Consumer tests', function () {
     if (cons2._isSubscribed) {
       await cons2.unsubscribe();
     }
-    if (sharedConsumer._isSubscribed) {
-      await sharedConsumer.unsubscribe();
+    if (sharedConsumer1._isSubscribed) {
+      await sharedConsumer1.unsubscribe();
+    }
+    if (sharedConsumer2._isSubscribed) {
+      await sharedConsumer2.unsubscribe();
     }
     if (unackPrioritySharedConsumer._isSubscribed) {
       await unackPrioritySharedConsumer.unsubscribe();
@@ -151,7 +165,42 @@ describe('Consumer tests', function () {
             onMessage: ({ message, properties }) => {
               messages.push(message.toString());
               receivedProperties = properties;
-              console.log(properties);
+              if (messages.length >= expectedMessages.length) {
+                resolve();
+              }
+            },
+          });
+        });
+        assert.deepEqual(messages, expectedMessages);
+        assert.deepEqual(receivedProperties, properties);
+      } catch (e) {
+        console.log(e);
+        assert.ok(false);
+      }
+    });
+    it('should consume the batch successfully with headers', async function () {
+      try {
+        await cons.subscribe();
+        let expectedMessages = ['galrose'];
+        let properties = { sinai: 'noob' };
+        let messages = [];
+        let receivedProperties;
+
+        const producer = new Producer({
+          discoveryServers,
+          jwt,
+          topic: 'persistent://public/default/test',
+        });
+        await producer.create();
+        await producer.sendBatch({
+          messages: [{ payload: 'galrose', properties: { sinai: 'noob' } }],
+        });
+        await producer.close();
+        await new Promise((resolve, reject) => {
+          cons.run({
+            onMessage: ({ message, properties }) => {
+              messages.push(message.toString());
+              receivedProperties = properties;
               if (messages.length >= expectedMessages.length) {
                 resolve();
               }
@@ -350,7 +399,7 @@ describe('Consumer tests', function () {
     });
   });
   describe('Redeliver unacknowledged messages', function () {
-    it('Should read the unacknowledged messages again, in failover consumer', async function () {
+    it('Should read the unacknowledged messages again, in failover subscription', async function () {
       const messages = ['first', 'second', 'third'];
       const receivedMessages = [];
       await cons.subscribe();
@@ -370,7 +419,7 @@ describe('Consumer tests', function () {
       });
       assert.deepEqual(receivedMessages, ['first', 'first', 'second', 'third']);
     });
-    it('Should read the unacknowledged messages again,in batch, in failover consumer', async function () {
+    it('Should read the unacknowledged messages again,in batch, in failover subscription', async function () {
       const messages = ['first', 'second', 'third'];
       const receivedMessages = [];
       await cons.subscribe();
@@ -397,16 +446,56 @@ describe('Consumer tests', function () {
       });
       assert.deepEqual(receivedMessages, ['first', 'first', 'second', 'third']);
     });
-    it('Should read the unacknowledged message again after the current flow, in shared consumer', async function () {
+    it('Should increase the redeliveryCount on multiple consumers in the same shared subscription', async function () {
+      let expectedRedeliveryCount = 0;
+      let receivedRedeliveryCount = 0;
+      let readByConsumer1 = false;
+      let readByConsumer2 = false;
+      await sharedConsumer1.subscribe();
+      await sharedConsumer2.subscribe();
+      await utils.produceMessages({ messages: ['galrose'] });
+      await new Promise((resolve, reject) => {
+        sharedConsumer1.run({
+          onMessage: async ({ ack, redeliveryCount }) => {
+            readByConsumer1 = true;
+            if (!readByConsumer1 || !readByConsumer2) {
+              expectedRedeliveryCount++;
+              await ack({ type: Consumer.ACK_TYPES.NEGATIVE });
+            } else {
+              receivedRedeliveryCount = redeliveryCount;
+              await ack({ type: Consumer.ACK_TYPES.INDIVIDUAL });
+              resolve();
+            }
+          },
+          autoAck: false,
+        });
+        sharedConsumer2.run({
+          onMessage: async ({ ack, redeliveryCount }) => {
+            readByConsumer2 = true;
+            if (!readByConsumer1 || !readByConsumer2) {
+              expectedRedeliveryCount++;
+              await ack({ type: Consumer.ACK_TYPES.NEGATIVE });
+            } else {
+              receivedRedeliveryCount = redeliveryCount;
+              await ack({ type: Consumer.ACK_TYPES.INDIVIDUAL });
+              resolve();
+            }
+          },
+          autoAck: false,
+        });
+      });
+      assert(expectedRedeliveryCount, receivedRedeliveryCount);
+    });
+    it('Should read the unacknowledged message again after the current flow, in shared subscription', async function () {
       const messages = ['first', 'second', 'third'];
       const expectedRedeliveryCount = [0, 0, 0, 1];
       const receivedMessages = [];
       const receivedRedeliveryCount = [];
-      await sharedConsumer.subscribe();
+      await sharedConsumer1.subscribe();
       let messageCounter = 0;
       await utils.produceMessages({ messages });
       await new Promise((resolve, reject) => {
-        sharedConsumer.run({
+        sharedConsumer1.run({
           onMessage: async ({ ack, message, redeliveryCount }) => {
             receivedRedeliveryCount.push(redeliveryCount);
             if (messageCounter === 0) await ack({ type: Consumer.ACK_TYPES.NEGATIVE });
@@ -421,7 +510,7 @@ describe('Consumer tests', function () {
       assert.deepEqual(receivedRedeliveryCount, expectedRedeliveryCount);
       assert.deepEqual(receivedMessages, ['first', 'second', 'third', 'first']);
     });
-    it('Should read the unacknowledged message again before the rest of the flow, in shared consumer', async function () {
+    it('Should read the unacknowledged message again before the rest of the flow, in shared subscription', async function () {
       const messages = ['first', 'second', 'third'];
       const expectedRedeliveryCount = [0, 1, 0, 0];
       const receivedMessages = [];
@@ -445,7 +534,7 @@ describe('Consumer tests', function () {
       assert.deepEqual(receivedRedeliveryCount, expectedRedeliveryCount);
       assert.deepEqual(receivedMessages, ['first', 'first', 'second', 'third']);
     });
-    it('Should read the unacknowledged message again before the rest of the flow,in batch, in shared consumer', async function () {
+    it('Should read the unacknowledged message again before the rest of the flow,in batch, in shared subscription', async function () {
       const messages = ['first', 'second', 'third'];
       const receivedMessages = [];
       await unackPrioritySharedConsumer.subscribe();
