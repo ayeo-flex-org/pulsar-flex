@@ -10,8 +10,8 @@ const deserializer = ({ metadata, buffer, messages }) => {
     );
     const objectSingleMetadata = singleMetadata.toObject();
     index += singleMetadataSize;
-    const message = buffer.slice(index, objectSingleMetadata.payloadSize + index);
-    messages.push(message);
+    const payload = buffer.slice(index, objectSingleMetadata.payloadSize + index);
+    messages.push({ payload, singleMessageMetadata: objectSingleMetadata });
     index += objectSingleMetadata.payloadSize;
   }
   return messages;

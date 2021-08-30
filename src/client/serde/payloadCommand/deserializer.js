@@ -31,7 +31,7 @@ const deserializer = (buffer) => {
   const typeNumber = deserializedBaseCommand.getType();
   const [type, command] = Object.entries(baseCommandObject)[typeNumber - 1];
 
-  const payload = deserializePayload({
+  const messages = deserializePayload({
     metadata,
     messageId: command.messageId,
     buffer: payloadBuffer,
@@ -42,17 +42,17 @@ const deserializer = (buffer) => {
     type,
     command,
     metadata,
-    payload,
+    messages,
   };
 };
 
 const deserializePayload = ({ metadata, buffer, isBatch }) => {
-  let messages = [];
+  const messages = [];
   if (isBatch) {
     // mutating
     batch.deserializer({ metadata, buffer, messages });
   } else {
-    messages.push(buffer);
+    messages.push({ payload: buffer });
   }
 
   return messages;
