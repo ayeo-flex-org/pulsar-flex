@@ -6,6 +6,19 @@ const utils = require('../utils');
 const { jwt, discoveryServers, topic, containerName } = config;
 
 describe('Producer tests', function () {
+  const producer = new Producer({
+    discoveryServers,
+    jwt,
+    topic,
+  });
+  beforeEach(async function () {});
+
+  afterEach(async function () {
+    if (producer._connected) {
+      await producer.close();
+    }
+  });
+
   describe('on creating & closing ', function () {
     it('should not throw exception', async function () {
       try {
@@ -190,6 +203,52 @@ describe('Producer tests', function () {
         setImmediate(() => emitter.emit('producerSuccess', { command: { requestId: 1 } }));
       });
       await producer.close();
+    });
+    it('should resend messages after reconnect', async function () {
+      await producer.create();
+      let msgsSent = 0;
+      // copy his way for resolving promise, no await for send message
+      // maybe add afterEach beforeEach
+      // test unload() :(
+      await new Promise(async (resolve, reject) => {
+        while (msgsSent <= 2) {
+          await producer
+            .sendMessage({ payload: 'sinai', properties: { k: 'v' } })
+            .then(() => {
+              msgsSent++;
+            })
+            .catch(reject);
+          if (msgsSent >= 2) {
+            resolve();
+            break;
+          }
+          console.log('closing connection');
+          producer._client.getCnx().close();
+        }
+      });
+    });
+    it('should resend messages after unload', async function () {
+      await producer.create();
+      let msgsSent = 0;
+      await new Promise(async (resolve, reject) => {
+        while (msgsSent <= 5) {
+          await producer
+            .sendMessage({ payload: 'sinai', properties: { k: 'v' } })
+            .then(() => {
+              console.log('sent');
+              msgsSent++;
+            })
+            .catch(reject);
+          if (msgsSent === 3) {
+            console.log('unloading');
+            await utils.unloadTopic();
+          }
+          if (msgsSent >= 5) {
+            resolve();
+            break;
+          }
+        }
+      });
     });
   });
   describe('on connection exception should resend batch', function () {

@@ -56,7 +56,7 @@ class Producer {
     this._logger.info(`Creating producer to topic: ${this._topic}`);
 
     if (this._connected)
-      throw new errors.PulsarFlexProducerCreationError({
+      throw new errors.PulsarFlexProducerAlreadyCreatedError({
         message: 'Already connected, please close before trying again',
       });
     this._logger.info(`Creating client connection for producer to topic: ${this._topic}`);
@@ -64,6 +64,7 @@ class Producer {
     await this._client.connect({ topic: this._topic });
     await this._client.getCnx().addCleanUpListener(() => {
       this._logger.warn(`Starting reconnection because socket ended unexpectedly`);
+      console.log('##########');
       this._connected = false;
       this._created && services.reconnect(this.create).then(() => (this._connected = true));
     });
