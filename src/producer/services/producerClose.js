@@ -1,4 +1,3 @@
-const reconnect = require('./reconnect');
 const errors = require('../../errors');
 
 const producerClose = ({ client, create, setConnected, sendResponseMediator }) => {
@@ -7,8 +6,6 @@ const producerClose = ({ client, create, setConnected, sendResponseMediator }) =
     setConnected(false);
     sendResponseMediator.purgeRequests({ error: errors.PulsarFlexProducerCloseError });
     client.getCnx().close();
-    await reconnect(create, setConnected);
-    setConnected(true);
   });
 };
 

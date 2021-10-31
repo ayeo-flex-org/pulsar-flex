@@ -1,6 +1,6 @@
 const resendMessages = (client, messageQueue, logger) => {
   client.getResponseEvents().on('producerSuccess', async () => {
-    logger.info('Starting resend message progress');
+    logger.info('Starting resend messages');
 
     while (messageQueue.length > 0) {
       logger.info(`De queueing message from messageQueue current length ${messageQueue.length}`);
