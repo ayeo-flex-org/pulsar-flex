@@ -1,6 +1,6 @@
 {
   "name": "pulsar-flex",
-  "version": "1.0.1-beta.4",
+  "version": "1.0.1-beta.5",
   "description": "A package that natively supports pulsar api",
   "main": "src/index.js",
   "scripts": {

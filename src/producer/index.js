@@ -56,7 +56,7 @@ class Producer {
     this._logger.info(`Creating producer to topic: ${this._topic}`);
 
     if (this._connected)
-      throw new errors.PulsarFlexProducerCreationError({
+      throw new errors.PulsarFlexProducerAlreadyCreatedError({
         message: 'Already connected, please close before trying again',
       });
     this._logger.info(`Creating client connection for producer to topic: ${this._topic}`);
@@ -65,7 +65,10 @@ class Producer {
     await this._client.getCnx().addCleanUpListener(() => {
       this._logger.warn(`Starting reconnection because socket ended unexpectedly`);
       this._connected = false;
-      this._created && services.reconnect(this.create).then(() => (this._connected = true));
+      this._created &&
+        services.reconnect(this.create).then(() => {
+          this._connected = true;
+        });
     });
 
     this._logger.info(
@@ -119,6 +122,10 @@ class Producer {
       });
     if (utils.isNil(payload)) throw new errors.PulsarFlexNoPayloadError();
     try {
+      if (!this._connected)
+        throw new errors.PulsarFlexProducerCreationError({
+          message: 'Cannot send messages over not connected producer',
+        });
       const { command } = await services.sendMessage({
         producerId: this._producerId,
         producerName: this._producerName,
@@ -135,6 +142,8 @@ class Producer {
         this._pendingMessageQueue.push({
           func: () =>
             services.sendMessage({
+              connected: this._connected,
+              isResend: true,
               producerId: this._producerId,
               producerName: this._producerName,
               client: this._client,
@@ -169,6 +178,10 @@ class Producer {
         message: 'Pending messages queue size has been exceeded',
       });
     try {
+      if (!this._connected)
+        throw new errors.PulsarFlexProducerCreationError({
+          message: 'Cannot send batch over not connected producer',
+        });
       const { command } = await services.sendBatch({
         producerId: this._producerId,
         producerName: this._producerName,

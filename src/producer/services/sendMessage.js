@@ -8,6 +8,8 @@ const sendMessage = async ({
   responseMediator,
   payload,
   properties,
+  connected,
+  isResend = false,
 }) => {
   const { sendPayloadCommandRequest } = client.getCnx();
   const messageMetadata = commands.messageMetadata({
