@@ -64,7 +64,6 @@ class Producer {
     await this._client.connect({ topic: this._topic });
     await this._client.getCnx().addCleanUpListener(() => {
       this._logger.warn(`Starting reconnection because socket ended unexpectedly`);
-      console.log('##########');
       this._connected = false;
       this._created && services.reconnect(this.create).then(() => (this._connected = true));
     });

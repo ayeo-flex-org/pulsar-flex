@@ -11,7 +11,11 @@ describe('Producer tests', function () {
     jwt,
     topic,
   });
-  beforeEach(async function () {});
+  beforeEach(async function () {
+    if (producer._connected) {
+      await producer.close();
+    }
+  });
 
   afterEach(async function () {
     if (producer._connected) {
@@ -207,9 +211,6 @@ describe('Producer tests', function () {
     it('should resend messages after reconnect', async function () {
       await producer.create();
       let msgsSent = 0;
-      // copy his way for resolving promise, no await for send message
-      // maybe add afterEach beforeEach
-      // test unload() :(
       await new Promise(async (resolve, reject) => {
         while (msgsSent <= 2) {
           await producer
@@ -222,7 +223,6 @@ describe('Producer tests', function () {
             resolve();
             break;
           }
-          console.log('closing connection');
           producer._client.getCnx().close();
         }
       });
@@ -235,12 +235,10 @@ describe('Producer tests', function () {
           await producer
             .sendMessage({ payload: 'sinai', properties: { k: 'v' } })
             .then(() => {
-              console.log('sent');
               msgsSent++;
             })
             .catch(reject);
           if (msgsSent === 3) {
-            console.log('unloading');
             await utils.unloadTopic();
           }
           if (msgsSent >= 5) {

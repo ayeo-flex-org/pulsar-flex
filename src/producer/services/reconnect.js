@@ -1,7 +1,6 @@
 const utils = require('../../utils');
 
 const reconnect = (create) =>
-  console.log('actually reconnecting') ||
   create().catch(async (e) => {
     console.log(e);
     if (
@@ -9,7 +8,6 @@ const reconnect = (create) =>
       e.error.contains('Producer with name')
     )
       return;
-    console.log('Retrying in 5 seconds.......');
     await utils.sleep(5000);
     await reconnect(create);
   });
