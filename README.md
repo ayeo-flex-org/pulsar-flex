@@ -85,7 +85,7 @@ const consumer = new Consumer({
 const run = async () => {
   await producer.create();
   // you can also send single message using sendMessage function
-  await producer.sendBatch([
+  await producer.sendBatch({messages: [
     {
       properties: {pulsar: "flex"}, 
       payload: 'Ayeo' 
@@ -94,7 +94,7 @@ const run = async () => {
       properties: {pulsar: "flex"},
       payload: 'Ayeo'
     }
-  ]);
+  ]});
 
   await consumer.subscribe();
   await consumer.run({
