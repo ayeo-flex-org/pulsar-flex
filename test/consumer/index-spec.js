@@ -585,7 +585,6 @@ describe('Consumer tests', function () {
       await new Promise((resolve, reject) => {
         unackPrioritySharedConsumer.run({
           onMessage: async ({ ack, message }) => {
-            console.log({ message: message.toString(), messageCounter })
             if (messageCounter === 0) await ack({ type: Consumer.ACK_TYPES.NEGATIVE });
             else await ack({ type: Consumer.ACK_TYPES.INDIVIDUAL });
             messageCounter++;
