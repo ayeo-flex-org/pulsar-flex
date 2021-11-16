@@ -534,7 +534,7 @@ describe('Consumer tests', function () {
       assert.deepEqual(receivedRedeliveryCount, expectedRedeliveryCount);
       assert.deepEqual(receivedMessages, ['first', 'first', 'second', 'third']);
     });
-    it('Should read the unacknowledged message again before the rest of the flow,in batch, in shared subscription', async function () {
+    it('Should read the batch of the unacknowledged message again before the rest of the flow, in batch, in shared subscription', async function () {
       const messages = ['first', 'second', 'third'];
       const receivedMessages = [];
       await unackPrioritySharedConsumer.subscribe();
@@ -549,17 +549,19 @@ describe('Consumer tests', function () {
       await new Promise((resolve, reject) => {
         unackPrioritySharedConsumer.run({
           onMessage: async ({ ack, message }) => {
-            if (messageCounter === 0) await ack({ type: Consumer.ACK_TYPES.NEGATIVE });
-            else await ack({ type: Consumer.ACK_TYPES.INDIVIDUAL });
             messageCounter++;
-            receivedMessages.push(message.toString());
-            messageCounter === 4 && resolve();
+            if (messageCounter === 1) await ack({ type: Consumer.ACK_TYPES.NEGATIVE });
+            else {
+              await ack({ type: Consumer.ACK_TYPES.INDIVIDUAL });
+              receivedMessages.push(message.toString());
+              messageCounter === 6 && resolve();
+            }
           },
           autoAck: false,
         });
       });
       await producer.close();
-      assert.deepEqual(receivedMessages, ['first', 'first', 'second', 'third']);
+      assert.deepEqual(receivedMessages, ['first', 'second', 'third', 'second', 'third']);
     });
   });
 });
