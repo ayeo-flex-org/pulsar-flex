@@ -553,7 +553,6 @@ describe('Consumer tests', function () {
             if (messageCounter === 1) await ack({ type: Consumer.ACK_TYPES.NEGATIVE });
             else {
               await ack({ type: Consumer.ACK_TYPES.INDIVIDUAL });
-              console.log(messageCounter)
               receivedMessages.push(message.toString());
               messageCounter === 6 && resolve();
             }
