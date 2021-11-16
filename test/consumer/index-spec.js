@@ -568,7 +568,7 @@ describe('Consumer tests', function () {
       assert.deepEqual(receivedRedeliveryCount, expectedRedeliveryCount);
       assert.deepEqual(receivedMessages, ['first', 'first', 'second', 'third']);
     });
-    it('Should read the unacknowledged message again before the rest of the flow,in batch, in shared subscription', async function () {
+    it('Should read the batch of the unacknowledged message again before the rest of the flow,in batch, in shared subscription', async function () {
       const messages = ['first', 'second', 'third'];
       const receivedMessages = [];
       await unackPrioritySharedConsumer.subscribe();
