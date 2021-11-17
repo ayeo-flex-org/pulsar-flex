@@ -95,7 +95,7 @@ module.exports = class Consumer {
 
     this._reflow = async () => {
       const nextFlow = Math.ceil(this._receiveQueueSize / 2);
-      if (--this._curFlow <= nextFlow && !this._receiveQueue.isEmpty()) {
+      if (--this._curFlow <= nextFlow) {
         this._curFlow += nextFlow;
         this._logger.info(`Re-flow, asking for ${nextFlow} more messages.`);
         await this._flow(nextFlow);

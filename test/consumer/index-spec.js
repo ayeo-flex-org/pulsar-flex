@@ -2,7 +2,6 @@ const { Consumer, Producer } = require('../../src');
 const config = require('../config');
 const assert = require('assert');
 const utils = require('../utils');
-const sleep = require('../../src/utils/sleep');
 const { LEVELS } = require('../../src/logger');
 
 const { jwt, discoveryServers, topic, containerName } = config;
@@ -64,6 +63,17 @@ describe('Consumer tests', function () {
     logLevel: LEVELS.INFO,
     prioritizeUnacknowledgedMessages: true,
   });
+  const smallReceiveQueueConsumer = new Consumer({
+    discoveryServers,
+    jwt,
+    topic: 'persistent://public/default/test',
+    subscription: 'subscription',
+    subType: Consumer.SUB_TYPES.FAILOVER,
+    consumerName: 'SmallReceiveQCons',
+    readCompacted: false,
+    receiveQueueSize: 5,
+    logLevel: LEVELS.INFO,
+  });
   beforeEach(async function () {
     await utils.clearBacklog();
   });
@@ -83,6 +93,30 @@ describe('Consumer tests', function () {
     if (unackPrioritySharedConsumer._isSubscribed) {
       await unackPrioritySharedConsumer.unsubscribe();
     }
+    if (smallReceiveQueueConsumer._isSubscribed) {
+      await smallReceiveQueueConsumer.unsubscribe();
+    }
+  });
+  describe('Reflow tests', function () {
+    it('Should read the messages after multiple reflows', async function () {
+      try {
+        await smallReceiveQueueConsumer.subscribe();
+        let messageCounter = 0;
+        const numberOfMessages = 20;
+        const messages = Array(numberOfMessages).fill('message');
+        await utils.produceMessages({ messages });
+        await new Promise((resolve, reject) => {
+          smallReceiveQueueConsumer.run({
+            onMessage: async ({ message }) => {
+              messageCounter++;
+              if (messageCounter === numberOfMessages) resolve();
+            },
+          });
+        });
+      } catch (e) {
+        console.log(e);
+      }
+    });
   });
   describe('Failover Tests', function () {
     it('Should consume messages', async function () {
@@ -534,7 +568,7 @@ describe('Consumer tests', function () {
       assert.deepEqual(receivedRedeliveryCount, expectedRedeliveryCount);
       assert.deepEqual(receivedMessages, ['first', 'first', 'second', 'third']);
     });
-    it('Should read the batch of the unacknowledged message again before the rest of the flow, in batch, in shared subscription', async function () {
+    it('Should read the batch of the unacknowledged message again before the rest of the flow,in batch, in shared subscription', async function () {
       const messages = ['first', 'second', 'third'];
       const receivedMessages = [];
       await unackPrioritySharedConsumer.subscribe();
