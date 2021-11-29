@@ -281,6 +281,36 @@ describe('Producer tests', function () {
       await producer.close();
     });
   });
+  describe('on sending messages check that sequenceId increases', function () {
+    it('should increase the sequenceId, per message on send message', async function () {
+      const expectedSequenceId = 50;
+      const producer = new Producer({
+        discoveryServers,
+        jwt,
+        topic,
+      });
+      await producer.create();
+      for (let i = 0; i < expectedSequenceId; i++) {
+        await producer.sendMessage({ payload: 'galrose', properties: { sinai: 'noob' } });
+      }
+      assert.deepStrictEqual(producer._sequenceId, expectedSequenceId);
+    });
+    it('should increase the sequenceId, per batch on send batch', async function () {
+      const expectedSequenceId = 50;
+      const producer = new Producer({
+        discoveryServers,
+        jwt,
+        topic,
+      });
+      await producer.create();
+      for (let i = 0; i < expectedSequenceId; i++) {
+        await producer.sendBatch({
+          messages: [{ payload: 'galrose', properties: { sinai: 'noob' } }],
+        });
+      }
+      assert.deepStrictEqual(producer._sequenceId, expectedSequenceId);
+    });
+  });
   describe('on sending message should contain payload and properties', function () {
     it('should not throw exception', async function () {
       const topic = 'public/default/testSendMessage';
