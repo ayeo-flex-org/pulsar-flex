@@ -126,6 +126,7 @@ class Producer {
         throw new errors.PulsarFlexProducerCreationError({
           message: 'Cannot send messages over not connected producer',
         });
+      this._sequenceId++;
       const { command } = await services.sendMessage({
         producerId: this._producerId,
         producerName: this._producerName,
@@ -160,7 +161,6 @@ class Producer {
         );
       });
     }
-    this._sequenceId++;
     return true;
   };
 
@@ -182,6 +182,7 @@ class Producer {
         throw new errors.PulsarFlexProducerCreationError({
           message: 'Cannot send batch over not connected producer',
         });
+      this._sequenceId++;
       const { command } = await services.sendBatch({
         producerId: this._producerId,
         producerName: this._producerName,
@@ -212,7 +213,6 @@ class Producer {
         );
       });
     }
-    this._sequenceId++;
     return true;
   };
 
