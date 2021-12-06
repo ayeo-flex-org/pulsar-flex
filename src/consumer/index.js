@@ -10,6 +10,7 @@ const pulsarApi = require('../commands/protocol/pulsar/pulsar_pb');
 const { createLogger, LEVELS } = require('../logger');
 const defaultLogger = require('../logger/default');
 const PriorityQueue = require('./priorityQueue');
+const { EventEmitter } = require('events');
 const SUB_TYPES = pulsarApi.CommandSubscribe.SubType;
 const ACK_TYPES = { ...pulsarApi.CommandAck.AckType, NEGATIVE: -1 };
 const INITIAL_POSITION = pulsarApi.CommandSubscribe.InitialPosition;
@@ -52,6 +53,7 @@ module.exports = class Consumer {
     this._receiveQueueSize = receiveQueueSize;
     this._reconnectInterval = reconnectInterval;
     this._isRedeliveringUnacknowledgedMessages = false;
+    this._emitter = new EventEmitter();
     this._prioritizeUnacknowledgedMessages = prioritizeUnacknowledgedMessages;
     this._requestId = 0;
     this._curFlow = receiveQueueSize;
@@ -61,7 +63,10 @@ module.exports = class Consumer {
     this._onMessageParams = {};
     this._processTimeoutInterval = null;
 
-    this._receiveQueue = new PriorityQueue();
+    this._receiveQueue = new PriorityQueue({
+      maxQueueSize: receiveQueueSize,
+      logger: this._logger,
+    });
 
     this._requestIdMediator = new responseMediators.RequestIdResponseMediator({
       client: this._client,
@@ -74,6 +79,7 @@ module.exports = class Consumer {
 
     this._isSubscribed = false;
     this._enqueueMessage = (data) => {
+      if (this._receiveQueue.length() === this._receiveQueueSize) return;
       // Classic for, for performance
       for (let i = 0; i < data.messages.length; i++) {
         this._receiveQueue.enqueue(
@@ -95,9 +101,9 @@ module.exports = class Consumer {
 
     this._reflow = async () => {
       const nextFlow = Math.ceil(this._receiveQueueSize / 2);
-      if (--this._curFlow <= nextFlow) {
-        this._curFlow += nextFlow;
+      if (--this._curFlow < nextFlow) {
         this._logger.info(`Re-flow, asking for ${nextFlow} more messages.`);
+        this._curFlow += nextFlow;
         await this._flow(nextFlow);
       }
     };
@@ -184,7 +190,10 @@ module.exports = class Consumer {
       redeliveringUnacknowledgedMessages &&
       (this._subType === SUB_TYPES.EXCLUSIVE || this._subType === SUB_TYPES.FAILOVER)
     )
-      this._receiveQueue = new PriorityQueue();
+      this._receiveQueue = new PriorityQueue({
+        maxQueueSize: this._receiveQueueSize,
+        logger: this._logger,
+      });
     this._isRedeliveringUnacknowledgedMessages = redeliveringUnacknowledgedMessages;
   };
 
@@ -199,10 +208,13 @@ module.exports = class Consumer {
 
   _cleanState = () => {
     clearTimeout(this._processTimeoutInterval);
-    this._client.getResponseEvents().off('message', this._reflow);
+    this._emitter.off('dequeueMessage', this._reflow);
     this._client.getResponseEvents().off('message', this._enqueueMessage);
     this._isSubscribed = false;
-    this._receiveQueue = new PriorityQueue();
+    this._receiveQueue = new PriorityQueue({
+      maxQueueSize: this._receiveQueueSize,
+      logger: this._logger,
+    });
   };
 
   unsubscribe = async () => {
@@ -268,8 +280,8 @@ module.exports = class Consumer {
     }
     this._onMessageParams = { onMessage, autoAck };
     this._setState(STATES.ACTIVE);
-    this._client.getResponseEvents().on('message', this._reflow);
     this._client.getResponseEvents().on('message', this._enqueueMessage);
+    this._emitter.on('dequeueMessage', this._reflow);
 
     const process = async () => {
       if (!this._isSubscribed) {
@@ -285,6 +297,7 @@ module.exports = class Consumer {
         return;
       }
       const message = this._receiveQueue.dequeue();
+      this._emitter.emit('dequeueMessage');
       if (autoAck) {
         await this._ack({
           messageIdData: message.command.messageId,

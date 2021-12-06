@@ -4,7 +4,7 @@ const assert = require('assert');
 const utils = require('../utils');
 const { LEVELS } = require('../../src/logger');
 
-const { jwt, discoveryServers, topic, containerName } = config;
+const { jwt, discoveryServers, topic, containerName, receiveQueueSize } = config;
 
 describe('Consumer tests', function () {
   const cons = new Consumer({
@@ -15,7 +15,7 @@ describe('Consumer tests', function () {
     subType: Consumer.SUB_TYPES.FAILOVER,
     consumerName: 'Consy',
     readCompacted: false,
-    receiveQueueSize: 1000,
+    receiveQueueSize,
     logLevel: LEVELS.INFO,
   });
   const cons2 = new Consumer({
@@ -26,7 +26,7 @@ describe('Consumer tests', function () {
     subType: Consumer.SUB_TYPES.FAILOVER,
     consumerName: 'Consy2',
     readCompacted: false,
-    receiveQueueSize: 1000,
+    receiveQueueSize,
     logLevel: LEVELS.INFO,
   });
   const sharedConsumer1 = new Consumer({
@@ -37,7 +37,7 @@ describe('Consumer tests', function () {
     subType: Consumer.SUB_TYPES.SHARED,
     consumerName: 'Consy3',
     readCompacted: false,
-    receiveQueueSize: 1000,
+    receiveQueueSize,
     logLevel: LEVELS.INFO,
   });
   const sharedConsumer2 = new Consumer({
@@ -48,7 +48,7 @@ describe('Consumer tests', function () {
     subType: Consumer.SUB_TYPES.SHARED,
     consumerName: 'Consy4',
     readCompacted: false,
-    receiveQueueSize: 1000,
+    receiveQueueSize,
     logLevel: LEVELS.INFO,
   });
   const unackPrioritySharedConsumer = new Consumer({
@@ -59,7 +59,7 @@ describe('Consumer tests', function () {
     subType: Consumer.SUB_TYPES.SHARED,
     consumerName: 'Consy5',
     readCompacted: false,
-    receiveQueueSize: 1000,
+    receiveQueueSize,
     logLevel: LEVELS.INFO,
     prioritizeUnacknowledgedMessages: true,
   });
@@ -97,7 +97,29 @@ describe('Consumer tests', function () {
       await smallReceiveQueueConsumer.unsubscribe();
     }
   });
-  describe('Reflow tests', function () {
+  describe('Flow tests', function () {
+    it('Should empty the receive queue after reading all the messages', async function () {
+      try {
+        await cons.subscribe();
+        let messageCounter = 0;
+        const numberOfMessages = 20;
+        const messages = Array(numberOfMessages).fill('message');
+        await utils.produceMessages({ messages });
+        await new Promise((resolve, reject) => {
+          cons.run({
+            onMessage: async ({ message }) => {
+              messageCounter++;
+              if (messageCounter === numberOfMessages) resolve();
+            },
+          });
+        });
+        assert.equal(cons._receiveQueue.length(), 0);
+        assert.equal(cons._curFlow, receiveQueueSize - numberOfMessages);
+      } catch (e) {
+        console.log(e);
+        throw e;
+      }
+    });
     it('Should read the messages after multiple reflows', async function () {
       try {
         await smallReceiveQueueConsumer.subscribe();
@@ -109,12 +131,15 @@ describe('Consumer tests', function () {
           smallReceiveQueueConsumer.run({
             onMessage: async ({ message }) => {
               messageCounter++;
+              console.log(message.toString());
               if (messageCounter === numberOfMessages) resolve();
             },
           });
         });
+        assert.equal(smallReceiveQueueConsumer._curFlow, 3);
       } catch (e) {
         console.log(e);
+        throw e;
       }
     });
   });
