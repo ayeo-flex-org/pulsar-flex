@@ -1,4 +1,3 @@
-const QElement = require('./element');
 class PriorityQueue {
   constructor({ maxQueueSize, logger }) {
     this.items = [];
@@ -11,7 +10,7 @@ class PriorityQueue {
       this.logger.warn(
         `The queue has reached the maximum size, still adding to queue but may cause issues.`
       );
-    const qElement = new QElement(element, priority);
+    const qElement = { element, priority };
     let contain = false;
     // for, for performance
     for (let i = 0; i < this.items.length; i++) {
