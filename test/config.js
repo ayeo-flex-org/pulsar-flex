@@ -3,6 +3,7 @@ const config = {
   discoveryServers: ['localhost:6650'],
   topic: 'persistent://public/default/test',
   subscription: 'subscription',
+  receiveQueueSize: 1000,
   producerConfiguration: { producerAccessMode: 'EXCLUSIVE' },
   commandConnectedBuffer: Buffer.from([
     0, 0, 0, 35, 0, 0, 0, 31, 8, 3, 26, 27, 10, 18, 80, 117, 108, 115, 97, 114, 32, 83, 101, 114,
