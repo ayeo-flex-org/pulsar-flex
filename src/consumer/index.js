@@ -291,9 +291,7 @@ module.exports = class Consumer {
         this._receiveQueue.isEmpty() ||
         (this._isRedeliveringUnacknowledgedMessages && this._prioritizeUnacknowledgedMessages)
       ) {
-        this._processTimeoutInterval = setTimeout(async () => {
-          await process();
-        }, 1000);
+        this._processTimeoutInterval = setTimeout(process, 1000);
         return;
       }
       const message = this._receiveQueue.dequeue();
@@ -319,7 +317,8 @@ module.exports = class Consumer {
             ackType: options.type ? options.type : ACK_TYPES.INDIVIDUAL,
           }),
       });
-      await process();
+      process();
+      return;
     };
     await this._flow(this._receiveQueueSize);
     await process();
