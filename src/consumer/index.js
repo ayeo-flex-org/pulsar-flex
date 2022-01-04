@@ -291,8 +291,12 @@ module.exports = class Consumer {
         this._receiveQueue.isEmpty() ||
         (this._isRedeliveringUnacknowledgedMessages && this._prioritizeUnacknowledgedMessages)
       ) {
-        this._processTimeoutInterval = setTimeout(async () => {
-          await process();
+        this._processTimeoutInterval = setTimeout(() => {
+          this._logger.trace(`No messages in receive queue or redelivering unacknowledged messages,
+          waiting 1 second to re-try process.`);
+          process().catch((e) => {
+            this._logger.error(`Error processing message, error ${e}`);
+          });
         }, 1000);
         return;
       }
@@ -319,9 +323,15 @@ module.exports = class Consumer {
             ackType: options.type ? options.type : ACK_TYPES.INDIVIDUAL,
           }),
       });
-      await process();
+      this._logger.trace(`Finished processing message with id: ${message.command.messageId}`);
+      process().catch((e) => {
+        this._logger.error(`Error processing message, error: ${e}`);
+      });
     };
     await this._flow(this._receiveQueueSize);
-    await process();
+    this._logger.trace(`Started processing messages...`);
+    process().catch((e) => {
+       this._logger.error(`Error with the first process call, error: ${e}`);
+    });
   };
 };
