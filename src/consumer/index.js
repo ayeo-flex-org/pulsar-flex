@@ -330,7 +330,7 @@ module.exports = class Consumer {
     };
     await this._flow(this._receiveQueueSize);
     this._logger.trace(`Started processing messages...`);
-    await process().catch((e) => {
+    process().catch((e) => {
        this._logger.error(`Error with the first process call, error: ${e}`);
     });
   };
