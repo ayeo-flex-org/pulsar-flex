@@ -155,22 +155,18 @@ module.exports = class Consumer {
     this._logger.info(
       `request id: ${this._requestId} consumer: ${this._consumerName}(${this._consumerId}) subscribing topic: ${this._topic} subscription: ${this._subscription}`
     );
-    try {
-      await services.subscribe({
-        cnx: this._client.getCnx(),
-        topic: this._topic,
-        subscription: this._subscription,
-        subType: this._subType,
-        consumerId: this._consumerId,
-        consumerName: this._consumerName,
-        initialPosition: this._initialPosition,
-        readCompacted: this._readCompacted,
-        requestId: this._requestId++,
-        responseMediator: this._requestIdMediator,
-      });
-    } catch (e) {
-      this._logger.error(`Error subscribing to topic ${this._topic}, error: ${e}`);
-    }
+    await services.subscribe({
+      cnx: this._client.getCnx(),
+      topic: this._topic,
+      subscription: this._subscription,
+      subType: this._subType,
+      consumerId: this._consumerId,
+      consumerName: this._consumerName,
+      initialPosition: this._initialPosition,
+      readCompacted: this._readCompacted,
+      requestId: this._requestId++,
+      responseMediator: this._requestIdMediator,
+    });
     this._isSubscribed = true;
     if (this.getState() === STATES.RECONNECTING) {
       await this.run(this._onMessageParams);

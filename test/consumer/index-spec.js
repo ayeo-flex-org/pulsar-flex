@@ -642,7 +642,7 @@ describe('Consumer tests', function () {
       });
       assert.ok(stateChanged);
     });
-    it('blah.', async function () {
+    it('Should continue reading even if custom consumer state change function throws errors.', async function () {
       let expectedNumOfMessages = 20;
       let actualNumOfMessages = 0;
       const messages = Array(expectedNumOfMessages).fill('message');
