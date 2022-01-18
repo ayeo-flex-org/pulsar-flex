@@ -623,4 +623,27 @@ describe('Consumer tests', function () {
       assert.deepEqual(receivedMessages, ['first', 'second', 'third', 'second', 'third']);
     });
   });
+  describe('Consumer State Change Handling Tests', function () {
+    it('Should run custom state change function provided.', async function () {
+      const stateChanged = await new Promise(async (resolve, reject) => {
+        const cons3 = new Consumer({
+          discoveryServers,
+          jwt,
+          topic: 'persistent://public/default/test',
+          subscription: 'subscription',
+          subType: Consumer.SUB_TYPES.FAILOVER,
+          consumerName: 'Consy',
+          readCompacted: false,
+          receiveQueueSize,
+          logLevel: LEVELS.INFO,
+          stateChangeHandler: ({ previousState, newState }) => {
+            resolve(true);
+          },
+        });
+        // triggers state change
+        await cons3.subscribe();
+      });
+      assert.ok(stateChanged);
+    });
+  });
 });
