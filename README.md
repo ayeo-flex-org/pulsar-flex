@@ -80,6 +80,10 @@ const consumer = new Consumer({
   receiveQueueSize: 1000,
   logLevel: logLevel.INFO,
   // you can also provide logCreator function
+  stateChangeHandler: ({previousState, newState}) => {
+    console.log(`Consumer previous state ${previousState}.`)
+    console.log(`Consumer new state ${newState}.`)
+  }
 })
 
 const run = async () => {
@@ -97,12 +101,6 @@ const run = async () => {
   ]});
 
   await consumer.subscribe();
-  consumer.onStateChange({
-    stateChangeHandler: ({previousState, newState}) => {
-      console.log(`Consumer previous state ${previousState}.`)
-      console.log(`Consumer new state ${newState}.`)
-    }
-  })
   await consumer.run({
     onMessage: async ({ ack, message, properties, redeliveryCount }) => {
       await ack(); // Default is individual ack
