@@ -63,6 +63,8 @@ module.exports = class Consumer {
     this._onMessageParams = {};
     this._processTimeoutInterval = null;
 
+    this._onStateChangeHandler = null;
+
     this._receiveQueue = new PriorityQueue({
       maxQueueSize: receiveQueueSize,
       logger: this._logger,
@@ -177,11 +179,22 @@ module.exports = class Consumer {
   };
 
   _setState = (state) => {
+    const previousState = this._consumerState;
     this._consumerState = state;
     this._logger.info(
       `Changing consumer state -> consumer: ${this._consumerName}(${
         this._consumerId
       }) STATE: ${this.getState()}`
+    );
+    if (this._onStateChangeHandler) {
+      this._onStateChangeHandler({ previousState, newState: this._consumerState });
+    }
+  };
+
+  onStateChange = ({ stateChangeHandler = null }) => {
+    this._onStateChangeHandler = stateChangeHandler;
+    this._logger.info(
+      `Set new state change handler for consumer: ${this._consumerName}(${this._consumerId})`
     );
   };
 
@@ -331,7 +344,7 @@ module.exports = class Consumer {
     await this._flow(this._receiveQueueSize);
     this._logger.trace(`Started processing messages...`);
     process().catch((e) => {
-       this._logger.error(`Error with the first process call, error: ${e}`);
+      this._logger.error(`Error with the first process call, error: ${e}`);
     });
   };
 };
