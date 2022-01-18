@@ -187,6 +187,7 @@ module.exports = class Consumer {
       }) STATE: ${this.getState()}`
     );
     if (this._onStateChangeHandler) {
+      this._logger.debug('Executing consumer state change handler.');
       this._onStateChangeHandler({ previousState, newState: this._consumerState });
     }
   };
