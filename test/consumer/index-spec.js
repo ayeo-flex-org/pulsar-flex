@@ -668,6 +668,7 @@ describe('Consumer tests', function () {
         await stateChangeErrorConsumer.run({
           onMessage: async ({ message }) => {
             actualNumOfMessages++;
+            if (actualNumOfMessages === 10) await utils.unloadTopic();
             if (actualNumOfMessages >= expectedNumOfMessages) resolve();
           },
         });
