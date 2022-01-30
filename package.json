@@ -3,6 +3,7 @@
   "version": "1.0.1-beta.9",
   "description": "A package that natively supports pulsar api",
   "main": "src/index.js",
+  "types": "types/index.d.ts",
   "scripts": {
     "pretest": "npm run test-setup",
     "test-setup": "node ./scripts/test-setup.js 2.8.0 60000",
