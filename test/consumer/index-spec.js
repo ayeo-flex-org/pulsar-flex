@@ -620,6 +620,25 @@ describe('Consumer tests', function () {
     });
   });
   describe('Consumer State Change Handling Tests', function () {
+    const stateChangeErrorConsumer = new Consumer({
+      discoveryServers,
+      jwt,
+      topic: 'persistent://public/default/test',
+      subscription: 'subscription',
+      subType: Consumer.SUB_TYPES.FAILOVER,
+      consumerName: 'Consy7',
+      readCompacted: false,
+      receiveQueueSize,
+      logLevel: LEVELS.TRACE,
+      stateChangeHandler: ({ previousState, newState }) => {
+        throw new Error('Unexpected fake error!');
+      },
+    });
+    afterEach(async function () {
+      if (stateChangeErrorConsumer._isSubscribed) {
+        await stateChangeErrorConsumer.unsubscribe();
+      }
+    });
     it('Should run custom state change function provided.', async function () {
       const stateChanged = await new Promise(async (resolve, reject) => {
         const stateChangeConsumer = new Consumer({
@@ -649,20 +668,7 @@ describe('Consumer tests', function () {
       let actualNumOfMessages = 0;
       const messages = Array(expectedNumOfMessages).fill('message');
       await utils.produceMessages({ messages });
-      const stateChangeErrorConsumer = new Consumer({
-        discoveryServers,
-        jwt,
-        topic: 'persistent://public/default/test',
-        subscription: 'subscription',
-        subType: Consumer.SUB_TYPES.FAILOVER,
-        consumerName: 'Consy7',
-        readCompacted: false,
-        receiveQueueSize,
-        logLevel: LEVELS.TRACE,
-        stateChangeHandler: ({ previousState, newState }) => {
-          throw new Error('Unexpected fake error!');
-        },
-      });
+
       await new Promise(async (resolve, reject) => {
         // triggers state change
         await stateChangeErrorConsumer.subscribe();
@@ -674,9 +680,6 @@ describe('Consumer tests', function () {
           },
         });
       });
-      if (stateChangeErrorConsumer._isSubscribed) {
-        await stateChangeErrorConsumer.unsubscribe();
-      }
     });
   });
 });
