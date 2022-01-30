@@ -620,6 +620,7 @@ describe('Consumer tests', function () {
     });
   });
   describe('Consumer State Change Handling Tests', function () {
+    let stateChangeConsumerRef;
     const stateChangeErrorConsumer = new Consumer({
       discoveryServers,
       jwt,
@@ -637,6 +638,9 @@ describe('Consumer tests', function () {
     afterEach(async function () {
       if (stateChangeErrorConsumer._isSubscribed) {
         await stateChangeErrorConsumer.unsubscribe();
+      }
+      if (stateChangeConsumerRef._isSubscribed) {
+        await stateChangeConsumerRef.unsubscribe();
       }
     });
     it('Should run custom state change function provided.', async function () {
@@ -657,9 +661,9 @@ describe('Consumer tests', function () {
             }
           },
         });
+        stateChangeConsumerRef = stateChangeConsumer;
         // triggers state change
         await stateChangeConsumer.subscribe();
-        await stateChangeConsumer.unsubscribe();
       });
       assert.ok(stateChanged);
     });
