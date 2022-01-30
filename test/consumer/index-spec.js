@@ -633,12 +633,14 @@ describe('Consumer tests', function () {
           receiveQueueSize,
           logLevel: LEVELS.INFO,
           stateChangeHandler: ({ previousState, newState }) => {
-            resolve(true);
+            if (previousState !== newState) {
+              resolve(true);
+            }
           },
         });
-        consumers.push(stateChangeConsumer);
         // triggers state change
         await stateChangeConsumer.subscribe();
+        await stateChangeConsumer.unsubscribe();
       });
       assert.ok(stateChanged);
     });
@@ -647,22 +649,21 @@ describe('Consumer tests', function () {
       let actualNumOfMessages = 0;
       const messages = Array(expectedNumOfMessages).fill('message');
       await utils.produceMessages({ messages });
+      const stateChangeErrorConsumer = new Consumer({
+        discoveryServers,
+        jwt,
+        topic: 'persistent://public/default/test',
+        subscription: 'subscription',
+        subType: Consumer.SUB_TYPES.FAILOVER,
+        consumerName: 'Consy7',
+        readCompacted: false,
+        receiveQueueSize,
+        logLevel: LEVELS.TRACE,
+        stateChangeHandler: ({ previousState, newState }) => {
+          throw new Error('Unexpected fake error!');
+        },
+      });
       await new Promise(async (resolve, reject) => {
-        const stateChangeErrorConsumer = new Consumer({
-          discoveryServers,
-          jwt,
-          topic: 'persistent://public/default/test',
-          subscription: 'subscription',
-          subType: Consumer.SUB_TYPES.FAILOVER,
-          consumerName: 'Consy7',
-          readCompacted: false,
-          receiveQueueSize,
-          logLevel: LEVELS.TRACE,
-          stateChangeHandler: ({ previousState, newState }) => {
-            throw new Error('Unexpected fake error!');
-          },
-        });
-        consumers.push(stateChangeErrorConsumer);
         // triggers state change
         await stateChangeErrorConsumer.subscribe();
         await stateChangeErrorConsumer.run({
@@ -673,6 +674,9 @@ describe('Consumer tests', function () {
           },
         });
       });
+      if (stateChangeErrorConsumer._isSubscribed) {
+        await stateChangeErrorConsumer.unsubscribe();
+      }
     });
   });
 });
