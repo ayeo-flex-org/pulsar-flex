@@ -36,6 +36,7 @@ module.exports = class Consumer {
     reconnectInterval = 5000,
     logLevel,
     logCreator = defaultLogger,
+    stateChangeHandler = null,
   }) {
     this._logger = createLogger({ logLevel, logCreator });
     this._client = new Pulsar({
@@ -62,6 +63,8 @@ module.exports = class Consumer {
 
     this._onMessageParams = {};
     this._processTimeoutInterval = null;
+
+    this._onStateChangeHandler = stateChangeHandler;
 
     this._receiveQueue = new PriorityQueue({
       maxQueueSize: receiveQueueSize,
@@ -177,12 +180,21 @@ module.exports = class Consumer {
   };
 
   _setState = (state) => {
+    const previousState = this._consumerState;
     this._consumerState = state;
     this._logger.info(
       `Changing consumer state -> consumer: ${this._consumerName}(${
         this._consumerId
       }) STATE: ${this.getState()}`
     );
+    if (this._onStateChangeHandler) {
+      this._logger.debug('Executing consumer state change handler.');
+      try {
+        this._onStateChangeHandler({ previousState, newState: this._consumerState });
+      } catch (e) {
+        this._logger.error(`Error executing state change handler function ${e}.`);
+      }
+    }
   };
 
   _setRedeliveringUnacknowledgedMessages = (redeliveringUnacknowledgedMessages) => {
@@ -331,7 +343,7 @@ module.exports = class Consumer {
     await this._flow(this._receiveQueueSize);
     this._logger.trace(`Started processing messages...`);
     process().catch((e) => {
-       this._logger.error(`Error with the first process call, error: ${e}`);
+      this._logger.error(`Error with the first process call, error: ${e}`);
     });
   };
 };

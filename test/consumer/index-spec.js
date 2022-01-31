@@ -74,27 +74,22 @@ describe('Consumer tests', function () {
     receiveQueueSize: 5,
     logLevel: LEVELS.INFO,
   });
+  const consumers = [
+    cons,
+    cons2,
+    sharedConsumer1,
+    sharedConsumer2,
+    unackPrioritySharedConsumer,
+    smallReceiveQueueConsumer,
+  ];
   beforeEach(async function () {
     await utils.clearBacklog();
   });
   afterEach(async function () {
-    if (cons._isSubscribed) {
-      await cons.unsubscribe();
-    }
-    if (cons2._isSubscribed) {
-      await cons2.unsubscribe();
-    }
-    if (sharedConsumer1._isSubscribed) {
-      await sharedConsumer1.unsubscribe();
-    }
-    if (sharedConsumer2._isSubscribed) {
-      await sharedConsumer2.unsubscribe();
-    }
-    if (unackPrioritySharedConsumer._isSubscribed) {
-      await unackPrioritySharedConsumer.unsubscribe();
-    }
-    if (smallReceiveQueueConsumer._isSubscribed) {
-      await smallReceiveQueueConsumer.unsubscribe();
+    for (const consumer of consumers) {
+      if (consumer._isSubscribed) {
+        await consumer.unsubscribe();
+      }
     }
   });
   describe('Flow tests', function () {
@@ -621,6 +616,73 @@ describe('Consumer tests', function () {
       });
       await producer.close();
       assert.deepEqual(receivedMessages, ['first', 'second', 'third', 'second', 'third']);
+    });
+  });
+  describe('Consumer State Change Handling Tests', function () {
+    let stateChangeConsumerRef;
+    const stateChangeErrorConsumer = new Consumer({
+      discoveryServers,
+      jwt,
+      topic: 'persistent://public/default/test',
+      subscription: 'subscription',
+      subType: Consumer.SUB_TYPES.FAILOVER,
+      consumerName: 'Consy7',
+      readCompacted: false,
+      receiveQueueSize,
+      logLevel: LEVELS.TRACE,
+      stateChangeHandler: ({ previousState, newState }) => {
+        throw new Error('Unexpected fake error!');
+      },
+    });
+    afterEach(async function () {
+      if (stateChangeErrorConsumer._isSubscribed) {
+        await stateChangeErrorConsumer.unsubscribe();
+      }
+      if (stateChangeConsumerRef._isSubscribed) {
+        await stateChangeConsumerRef.unsubscribe();
+      }
+    });
+    it('Should run custom state change function provided.', async function () {
+      const stateChanged = await new Promise(async (resolve, reject) => {
+        const stateChangeConsumer = new Consumer({
+          discoveryServers,
+          jwt,
+          topic: 'persistent://public/default/test',
+          subscription: 'subscription',
+          subType: Consumer.SUB_TYPES.FAILOVER,
+          consumerName: 'Consy6',
+          readCompacted: false,
+          receiveQueueSize,
+          logLevel: LEVELS.INFO,
+          stateChangeHandler: ({ previousState, newState }) => {
+            if (previousState !== newState) {
+              resolve(true);
+            }
+          },
+        });
+        stateChangeConsumerRef = stateChangeConsumer;
+        // triggers state change
+        await stateChangeConsumer.subscribe();
+      });
+      assert.ok(stateChanged);
+    });
+    it('Should continue reading even if custom consumer state change function throws errors.', async function () {
+      let expectedNumOfMessages = 20;
+      let actualNumOfMessages = 0;
+      const messages = Array(expectedNumOfMessages).fill('message');
+      await utils.produceMessages({ messages });
+
+      await new Promise(async (resolve, reject) => {
+        // triggers state change
+        await stateChangeErrorConsumer.subscribe();
+        await stateChangeErrorConsumer.run({
+          onMessage: async ({ message }) => {
+            actualNumOfMessages++;
+            if (actualNumOfMessages === 10) await utils.unloadTopic();
+            if (actualNumOfMessages >= expectedNumOfMessages) resolve();
+          },
+        });
+      });
     });
   });
 });

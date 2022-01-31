@@ -80,6 +80,10 @@ const consumer = new Consumer({
   receiveQueueSize: 1000,
   logLevel: logLevel.INFO,
   // you can also provide logCreator function
+  stateChangeHandler: ({previousState, newState}) => {
+    console.log(`Consumer previous state ${previousState}.`)
+    console.log(`Consumer new state ${newState}.`)
+  }
 })
 
 const run = async () => {
