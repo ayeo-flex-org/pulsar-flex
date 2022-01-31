@@ -7,7 +7,6 @@ const { LEVELS } = require('../../src/logger');
 const { jwt, discoveryServers, topic, containerName, receiveQueueSize } = config;
 
 describe('Consumer tests', function () {
-  const consumers = [];
   const cons = new Consumer({
     discoveryServers,
     jwt,
@@ -75,14 +74,14 @@ describe('Consumer tests', function () {
     receiveQueueSize: 5,
     logLevel: LEVELS.INFO,
   });
-  consumers.push(
+  const consumers = [
     cons,
     cons2,
     sharedConsumer1,
     sharedConsumer2,
     unackPrioritySharedConsumer,
-    smallReceiveQueueConsumer
-  );
+    smallReceiveQueueConsumer,
+  ];
   beforeEach(async function () {
     await utils.clearBacklog();
   });
