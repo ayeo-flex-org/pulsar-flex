@@ -36,7 +36,6 @@ module.exports = class Consumer {
     reconnectInterval = 5000,
     logLevel,
     logCreator = defaultLogger,
-    stateChangeHandler = null,
   }) {
     this._logger = createLogger({ logLevel, logCreator });
     this._client = new Pulsar({
@@ -64,7 +63,7 @@ module.exports = class Consumer {
     this._onMessageParams = {};
     this._processTimeoutInterval = null;
 
-    this._onStateChangeHandler = stateChangeHandler;
+    this._onStateChangeHandler = null;
 
     this._receiveQueue = new PriorityQueue({
       maxQueueSize: receiveQueueSize,
@@ -195,6 +194,13 @@ module.exports = class Consumer {
         this._logger.error(`Error executing state change handler function ${e}.`);
       }
     }
+  };
+
+  onStateChange = (stateChangeHandler) => {
+    this._onStateChangeHandler = stateChangeHandler;
+    this._logger.info(
+      `Set new state change handler for consumer: ${this._consumerName}(${this._consumerId})`
+    );
   };
 
   _setRedeliveringUnacknowledgedMessages = (redeliveringUnacknowledgedMessages) => {

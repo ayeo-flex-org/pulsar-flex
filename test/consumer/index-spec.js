@@ -619,8 +619,7 @@ describe('Consumer tests', function () {
     });
   });
   describe('Consumer State Change Handling Tests', function () {
-    let stateChangeConsumerRef;
-    const stateChangeErrorConsumer = new Consumer({
+    const stateChangeConsumer = new Consumer({
       discoveryServers,
       jwt,
       topic: 'persistent://public/default/test',
@@ -630,43 +629,29 @@ describe('Consumer tests', function () {
       readCompacted: false,
       receiveQueueSize,
       logLevel: LEVELS.TRACE,
-      stateChangeHandler: ({ previousState, newState }) => {
-        throw new Error('Unexpected fake error!');
-      },
     });
     afterEach(async function () {
-      if (stateChangeErrorConsumer._isSubscribed) {
-        await stateChangeErrorConsumer.unsubscribe();
-      }
-      if (stateChangeConsumerRef._isSubscribed) {
-        await stateChangeConsumerRef.unsubscribe();
+      if (stateChangeConsumer._isSubscribed) {
+        await stateChangeConsumer.unsubscribe();
       }
     });
     it('Should run custom state change function provided.', async function () {
       const stateChanged = await new Promise(async (resolve, reject) => {
-        const stateChangeConsumer = new Consumer({
-          discoveryServers,
-          jwt,
-          topic: 'persistent://public/default/test',
-          subscription: 'subscription',
-          subType: Consumer.SUB_TYPES.FAILOVER,
-          consumerName: 'Consy6',
-          readCompacted: false,
-          receiveQueueSize,
-          logLevel: LEVELS.INFO,
-          stateChangeHandler: ({ previousState, newState }) => {
-            if (previousState !== newState) {
-              resolve(true);
-            }
-          },
+        stateChangeConsumer.onStateChange(({ previousState, newState }) => {
+          if (previousState !== newState) {
+            resolve(true);
+          }
         });
-        stateChangeConsumerRef = stateChangeConsumer;
         // triggers state change
         await stateChangeConsumer.subscribe();
       });
       assert.ok(stateChanged);
     });
     it('Should continue reading even if custom consumer state change function throws errors.', async function () {
+      stateChangeConsumer.onStateChange(({ previousState, newState }) => {
+        throw new Error('Unexpected fake error!');
+      });
+      
       let expectedNumOfMessages = 20;
       let actualNumOfMessages = 0;
       const messages = Array(expectedNumOfMessages).fill('message');
@@ -674,8 +659,8 @@ describe('Consumer tests', function () {
 
       await new Promise(async (resolve, reject) => {
         // triggers state change
-        await stateChangeErrorConsumer.subscribe();
-        await stateChangeErrorConsumer.run({
+        await stateChangeConsumer.subscribe();
+        await stateChangeConsumer.run({
           onMessage: async ({ message }) => {
             actualNumOfMessages++;
             if (actualNumOfMessages === 10) await utils.unloadTopic();
