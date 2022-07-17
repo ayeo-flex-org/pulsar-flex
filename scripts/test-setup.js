@@ -21,7 +21,7 @@ console.log(`Setting up environment using JWT and pulsar standalone version ${ve
     await asyncExec(`docker rm ${containerName} -f`);
     console.log(`Successfully found and removed docker with name ${containerName}`);
   } catch (e) {
-    console.log(`Did not found docker with name ${containerName}`);
+    console.log(`Did not find docker with name ${containerName}`);
   }
 
   const dockerComposeFilePath = path.join(
@@ -57,16 +57,16 @@ console.log(`Setting up environment using JWT and pulsar standalone version ${ve
     console.log(`Found a running pulsar container, continuing`);
   }
 
-  console.log('Creating test topic public/default/test');
+  console.log('Creating test topic "public/default/test"');
   await asyncExec(
     `docker exec ${containerName} /pulsar/bin/pulsar-admin topics create public/default/test`
   );
-  console.log('Creating subscription subscription');
+  console.log('Creating "subscription" subscription');
 
   await asyncExec(
     `docker exec ${containerName} /pulsar/bin/pulsar-admin topics create-subscription -s subscription public/default/test`
   );
 
-  console.log('You can run the your tests now!');
+  console.log('You can run your tests now!');
   process.exit(0);
 })();
