@@ -73,6 +73,7 @@ const producer = new Producer({
 
 const consumer = new Consumer({
   topic: "persistent://public/default/my-topic",
+  subscription: "my-subscription",
   discoveryServers: ['pulsar-host:6650'],
   jwt: process.env.JWT_TOKEN,
   subType: Consumer.SUB_TYPES.EXCLUSIVE,
