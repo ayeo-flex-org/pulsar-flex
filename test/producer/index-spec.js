@@ -281,6 +281,38 @@ describe('Producer tests', function () {
       await producer.close();
     });
   });
+  describe('on connection exception should not resend batch', function () {
+    it('should not throw exception', async function () {
+      const producer = new Producer({
+        discoveryServers,
+        jwt,
+        topic,
+        maxPendingMessagesQueueSize: 0
+      });
+      await producer.create();
+      const goodClient = producer._client.getCnx();
+      producer._client._cnx = {
+        sendPayloadCommandRequest: () => {
+          throw new Error('galrose');
+        },
+        sendSimpleCommandRequest: () => {
+          throw new Error('galrose');
+        },
+        sendPayloadBatchCommandRequest: () => {
+          throw new Error('galrose');
+        },
+      };
+      const err = await new Promise((resolve, reject) => {
+        producer
+          .sendBatch({ messages: [{ payload: 'sinai', properties: { k: 'v' } }] })
+          .then(() => reject(new Error('Should reject')))
+          .catch(resolve);
+      });
+      assert.equal(err.message, 'galrose')
+      producer._client._cnx = goodClient;
+      await producer.close();
+    });
+  });
   describe('on sending messages check that sequenceId increases', function () {
     it('should increase the sequenceId, per message on send message', async function () {
       const expectedSequenceId = 50;
