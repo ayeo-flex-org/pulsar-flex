@@ -116,7 +116,7 @@ class Producer {
       throw new errors.PulsarFlexProducerSendError({
         message: 'Cannot send messages over not created producer',
       });
-    if (this._pendingMessageQueue.length === this._maxPendingMessagesQueueSize - 1)
+    if (this._maxPendingMessagesQueueSize > 0 && this._pendingMessageQueue.length === this._maxPendingMessagesQueueSize - 1)
       throw new errors.PulsarFlexProducerSendError({
         message: 'Pending messages queue size has been exceeded',
       });
@@ -138,7 +138,7 @@ class Producer {
       });
       if (!utils.isNil(command.error)) throw new errors.PulsarFlexProducerSendError(command.error);
     } catch (e) {
-      if (e.name === 'PulsarFlexProducerSendError') throw e;
+      if (this._maxPendingMessagesQueueSize === 0 || e.name === 'PulsarFlexProducerSendError') throw e;
       await new Promise(async (resolve, reject) => {
         this._pendingMessageQueue.push({
           func: () =>
@@ -173,7 +173,7 @@ class Producer {
       throw new errors.PulsarFlexProducerSendError({
         message: 'Cannot send an empty batch, needs messages',
       });
-    if (this._pendingMessageQueue.length === this._maxPendingMessagesQueueSize - 1)
+    if (this._maxPendingMessagesQueueSize > 0 && this._pendingMessageQueue.length === this._maxPendingMessagesQueueSize - 1)
       throw new errors.PulsarFlexProducerSendError({
         message: 'Pending messages queue size has been exceeded',
       });
@@ -193,7 +193,7 @@ class Producer {
       });
       if (!utils.isNil(command.error)) throw new errors.PulsarFlexProducerSendError(command.error);
     } catch (e) {
-      if (e.name === 'PulsarFlexProducerSendError') throw e;
+      if (this._maxPendingMessagesQueueSize === 0 || e.name === 'PulsarFlexProducerSendError') throw e;
       await new Promise(async (resolve, reject) => {
         this._pendingMessageQueue.push({
           func: () =>
