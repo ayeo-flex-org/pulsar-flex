@@ -8,11 +8,12 @@ const close = async ({ producerId, client, connected, requestId, responseMediato
       message: 'Cannot close not connected producer',
     });
 
-  const { sendSimpleCommandRequest } = client.getCnx();
+  const { sendSimpleCommandRequest, close } = client.getCnx();
   const closeProducer = commands.closeProducer({ producerId, requestId });
   const { command } = await sendSimpleCommandRequest({ command: closeProducer }, responseMediator);
   if (!utils.isNil(command.error))
     throw new errors.PulsarFlexProducerCloseError({ message: command.message });
+  close(); //close the underlying socket to ensure there are no dangling resources
 };
 
 module.exports = close;
